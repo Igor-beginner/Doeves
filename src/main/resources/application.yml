@@ -1,4 +1,8 @@
+
 spring:
+  flyway:
+    schemas: test_schema
+    locations: db.migration
   datasource:
     url: jdbc:postgresql://${DB_HOST}:5432/postgres
     username: ${DB_NAME}
@@ -10,14 +14,23 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
+        default_schema: test_schema
     show-sql: true
   main:
     web-application-type: servlet
   application:
     name: Doeves
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE}
+
 
 cors:
   allowed-origins: "*"
   allowed-methods: "*"
   allowed-headers: "*"
   exposed-headers: "*"
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
