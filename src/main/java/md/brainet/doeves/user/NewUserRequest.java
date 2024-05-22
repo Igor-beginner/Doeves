@@ -3,7 +3,6 @@ package md.brainet.doeves.user;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
 
-// TODO validate
 public record NewUserRequest(
 
         @Email(

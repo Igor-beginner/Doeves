@@ -2,6 +2,7 @@ package md.brainet.doeves.task;
 
 import md.brainet.doeves.user.User;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -19,7 +20,6 @@ public class TaskController {
     }
 
     @ResponseStatus(HttpStatus.OK)
-    @GetMapping("all")
     public ResponseEntity<?> fetchAll(@AuthenticationPrincipal User user) {
         List<Task> tasks = taskService.fetchAllUserTasks(user.getId());
         return ResponseEntity.ok(tasks);
@@ -76,8 +76,8 @@ public class TaskController {
                 new TaskResponse(
                         "Task with id [%s] is "
                                 .concat(complete
-                                        ? "uncompleted again"
-                                        : "finished")
+                                        ? "finished"
+                                        : "uncompleted")
                 )
         );
     }

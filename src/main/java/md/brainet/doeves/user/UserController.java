@@ -26,9 +26,4 @@ public class UserController {
                 "User was saved successfully"
         ));
     }
-
-    public record NewUserResponse (
-            Integer id,
-            String message
-    ) {}
 }
