@@ -1,10 +1,8 @@
 package md.brainet.doeves.user;
 
-import jdk.jshell.spi.ExecutionControl;
 import org.springframework.stereotype.Service;
 
 import java.util.NoSuchElementException;
-import java.util.Optional;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -20,7 +18,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Integer makeUser(NewUserRequest request) {
-        return userDao.insertUser(requestMapper.apply(request));
+        return userDao.insertUserAndDefaultRole(requestMapper.apply(request));
     }
 
     @Override

@@ -1,15 +1,20 @@
 package md.brainet.doeves.user;
 
+import md.brainet.doeves.exception.EmailAlreadyExistsDaoException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementCallback;
+import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Objects;
 import java.util.Optional;
 
 @Repository
@@ -42,19 +47,45 @@ public class JDBCUserDao implements UserDao {
     }
 
     @Override
-    public User selectOwnerOfTaskWithId(int taskId) {
+    public Optional<User> selectOwnerOfTaskWithId(int taskId) {
         var sql = SELECT_USER_BY_ID_SQL + """
                 LEFT JOIN task t
                 ON t.owner_id = u.id
                 WHERE t.id = ?
                 """;
 
-        return jdbcTemplate.query(sql, resultSetMapper, taskId);
+        return Optional.ofNullable(
+                jdbcTemplate.query(
+                        sql,
+                        resultSetMapper,
+                        taskId
+                )
+        );
     }
 
     @Override
     @Transactional
-    public Integer insertUser(User user) {
+    public Integer insertUserAndDefaultRole(User user) {
+        int id;
+        try {
+            id = insertUser(user);
+        } catch (DuplicateKeyException e) {
+            throw new EmailAlreadyExistsDaoException(
+                    "Email [%s] already exists."
+                            .formatted(user.getEmail()),
+                    e
+            );
+        }
+
+        roleDao.insertRoleForUserId(
+                id,
+                Role.getDefault()
+        );
+
+        return id;
+    }
+
+    private Integer insertUser(User user) {
         var sql = """
                 INSERT INTO users (
                     email,
@@ -78,21 +109,14 @@ public class JDBCUserDao implements UserDao {
             return preparedStatement;
         }, keyHolder);
 
-        int id = (int) keyHolder.getKeys().get("id");
-
-        roleDao.insertRoleForUserId(
-                id,
-                Role.getDefault()
-        );
-
-        return id;
+        return  (int) keyHolder.getKeys().get("id");
     }
 
 
     @Override
     public Optional<User> selectUserById(Integer userId) {
         var sql = SELECT_USER_BY_ID_SQL + """
-                WHERE id = ?;
+                WHERE u.id = ?;
                 """;
 
         return selectUserByCriteria(userId, sql);

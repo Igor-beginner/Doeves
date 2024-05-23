@@ -15,19 +15,20 @@ public class UserResultSetMapper implements ResultSetExtractor<User> {
 
     @Override
     public User extractData(ResultSet rs) throws SQLException, DataAccessException {
-        User user = new User();
-        user.setId(rs.getInt("id"));
-        user.setEmail(rs.getString("email"));
-        user.setPassword(rs.getString("password"));
-        user.setEnabled(rs.getBoolean("is_enabled"));
-
         List<Role> roles = new ArrayList<>();
+        User user = null;
 
-        do {
+        while (rs.next()) {
+            if(user == null) {
+                user = new User();
+                user.setId(rs.getInt("id"));
+                user.setEmail(rs.getString("email"));
+                user.setPassword(rs.getString("password"));
+                user.setEnabled(rs.getBoolean("is_enabled"));
+                user.setRoles(roles);
+            }
             roles.add(Role.valueOf(rs.getString("role_name")));
-        } while (rs.next());
-
-        user.setRoles(roles);
+        }
 
         return user;
     }

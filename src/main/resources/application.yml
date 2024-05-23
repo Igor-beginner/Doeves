@@ -2,7 +2,6 @@
 spring:
   flyway:
     schemas: test_schema
-    locations: db.migration
   datasource:
     url: jdbc:postgresql://${DB_HOST}:5432/postgres
     username: ${DB_NAME}

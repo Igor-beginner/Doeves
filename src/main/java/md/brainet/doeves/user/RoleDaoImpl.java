@@ -15,16 +15,10 @@ public class RoleDaoImpl implements RoleDao {
     @Override
     public void insertRoleForUserId(Integer userId, Role role) {
         var sql = """
-                INSERT INTO users_role (
-                    user_id,
-                    role_id
-                )
-                VALUES (?, (
-                        SELECT id
-                        FROM role
-                        WHERE name = ?
-                    )
-                )
+                INSERT INTO users_role (user_id, role_id)
+                SELECT ?, id
+                FROM role
+                WHERE name = ?;
                 """;
 
         jdbcTemplate.update(sql, userId, role.name());
