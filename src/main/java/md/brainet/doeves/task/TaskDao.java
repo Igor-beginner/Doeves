@@ -14,7 +14,7 @@ public interface TaskDao {
 
     void removeById(int taskId);
 
-    void changeTaskStatusById(int taskId, boolean complete);
+    Task selectById(int taskId);
 
     void updateStatusByTaskId(int taskId, boolean complete);
 }

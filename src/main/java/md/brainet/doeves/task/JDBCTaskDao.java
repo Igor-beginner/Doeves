@@ -13,25 +13,29 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Objects;
 
 @Repository
 public class JDBCTaskDao implements TaskDao {
 
     private final JdbcTemplate jdbcTemplate;
+    private final TaskListResultSetMapper taskListResultSetMapper;
 
-    public JDBCTaskDao(JdbcTemplate jdbcTemplate) {
+    public JDBCTaskDao(JdbcTemplate jdbcTemplate, TaskListResultSetMapper taskListResultSetMapper) {
         this.jdbcTemplate = jdbcTemplate;
+        this.taskListResultSetMapper = taskListResultSetMapper;
     }
 
     @Override
     public List<Task> selectAllTasksWhereUserIdIs(Integer userId) {
-        var sql = """
-                SELECT *
-                FROM task
-                WHERE owner_id = ?;
-                """;
+        var sql = "SELECT * FROM task WHERE owner_id = ?;";
 
-        return jdbcTemplate.queryForList(sql, Task.class, userId);
+        return jdbcTemplate.query(
+                sql,
+                taskListResultSetMapper,
+                userId
+        );
     }
 
     @Override
@@ -57,15 +61,18 @@ public class JDBCTaskDao implements TaskDao {
 
             preparedStatement.setString(1, task.getName());
             preparedStatement.setString(2, task.getDescription());
+            var deadline = task.getDeadline();
             preparedStatement.setTimestamp(3,
-                    Timestamp.valueOf(task.getDeadline())
+                    Objects.isNull(deadline)
+                    ? null
+                    : Timestamp.valueOf(deadline)
             );
             preparedStatement.setInt(4, task.getOwnerId());
 
             return preparedStatement;
         }, keyHolder);
 
-        return keyHolder.getKey().intValue();
+        return (int) keyHolder.getKeys().get("id");
     }
 
     @Override
@@ -77,7 +84,7 @@ public class JDBCTaskDao implements TaskDao {
                 deadline = ?
                 WHERE id = ?;
                 """;
-
+        //TODO throw exception where task id doesn't exist
         jdbcTemplate.update(sql,
                 task.getName(),
                 task.getDescription(),
@@ -97,7 +104,7 @@ public class JDBCTaskDao implements TaskDao {
     }
 
     @Override
-    public void changeTaskStatusById(int taskId, boolean complete) {
+    public void updateStatusByTaskId(int taskId, boolean complete) {
         var sql = """
                 UPDATE task
                 SET is_complete = ?
@@ -108,13 +115,22 @@ public class JDBCTaskDao implements TaskDao {
     }
 
     @Override
-    public void updateStatusByTaskId(int taskId, boolean complete) {
+    public Task selectById(int taskId) {
         var sql = """
-                UPDATE task
-                SET is_complete = ?
+                SELECT *
+                FROM task
                 WHERE id = ?;
                 """;
 
-        jdbcTemplate.update(sql, complete, taskId);
+        List<Task> tasks = jdbcTemplate
+                .query(sql, taskListResultSetMapper, taskId);
+
+        if(Objects.isNull(tasks) || tasks.isEmpty()) {
+            throw new NoSuchElementException(
+                    "Task with id [%s] cannot be found"
+                            .formatted(tasks)
+            );
+        }
+        return tasks.get(0);
     }
 }

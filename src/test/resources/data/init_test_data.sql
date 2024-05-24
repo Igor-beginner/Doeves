@@ -1,3 +1,6 @@
+DELETE FROM task;
+DELETE FROM users;
+
 INSERT INTO users (id, email, password)
 VALUES (1, 'test@mail.ru', '123456');
 
@@ -11,7 +14,7 @@ INSERT INTO task(
                  id,
                  name,
                  description,
-                 complete,
+                 is_complete,
                  date_of_create,
                  deadline,
                  owner_id
@@ -20,7 +23,7 @@ INSERT INTO task(
           'Task1',
           'Description1',
           false,
-          now(),
+          CURRENT_TIMESTAMP,
           null,
           1
 );
@@ -29,7 +32,7 @@ INSERT INTO task(
     id,
     name,
     description,
-    complete,
+    is_complete,
     date_of_create,
     deadline,
     owner_id
@@ -38,7 +41,7 @@ INSERT INTO task(
              'Task2',
              'Description2',
              true,
-             now(),
+             CURRENT_TIMESTAMP,
              null,
              1
          );
@@ -47,7 +50,7 @@ INSERT INTO task(
     id,
     name,
     description,
-    complete,
+    is_complete,
     date_of_create,
     deadline,
     owner_id
@@ -56,9 +59,9 @@ INSERT INTO task(
              'Task3',
              'Description3',
              false,
-             now(),
+             CURRENT_TIMESTAMP,
              null,
              1
          );
 
-SELECT SETVAL('task_id_seq', (SELECT MAX(id) FROM users));
+SELECT SETVAL('task_id_seq', (SELECT MAX(id) FROM users) + 1);

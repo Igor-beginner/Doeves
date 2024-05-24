@@ -19,7 +19,7 @@ CREATE TABLE task (
     id SERIAL PRIMARY KEY,
     name VARCHAR(30) NOT NULL,
     description VARCHAR(255),
-    complete BOOLEAN DEFAULT false,
+    is_complete BOOLEAN DEFAULT false,
     date_of_create TIMESTAMP DEFAULT now() NOT NULL,
     deadline TIMESTAMP,
     owner_id INTEGER REFERENCES users(id) NOT NULL
