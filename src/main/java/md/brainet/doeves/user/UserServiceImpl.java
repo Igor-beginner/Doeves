@@ -1,5 +1,7 @@
 package md.brainet.doeves.user;
 
+import md.brainet.doeves.exception.EmailAlreadyExistsDaoException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 import java.util.NoSuchElementException;
@@ -18,7 +20,17 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Integer makeUser(NewUserRequest request) {
-        return userDao.insertUserAndDefaultRole(requestMapper.apply(request));
+        try {
+            return userDao.insertUserAndDefaultRole(
+                            requestMapper.apply(request)
+                    );
+        } catch (DuplicateKeyException e) {
+            throw new EmailAlreadyExistsDaoException(
+                    "Email [%s] already exists."
+                            .formatted(request.email()),
+                    e
+            );
+        }
     }
 
     @Override

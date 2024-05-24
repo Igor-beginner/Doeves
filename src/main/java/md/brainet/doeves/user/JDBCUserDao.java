@@ -59,23 +59,7 @@ public class JDBCUserDao implements UserDao {
     }
 
     @Override
-    @Transactional
     public Integer insertUserAndDefaultRole(User user) {
-        int id;
-        try {
-            id = insertUser(user);
-        } catch (DuplicateKeyException e) {
-            throw new EmailAlreadyExistsDaoException(
-                    "Email [%s] already exists."
-                            .formatted(user.getEmail()),
-                    e
-            );
-        }
-
-        return id;
-    }
-
-    private Integer insertUser(User user) {
         var sql = """
                 INSERT INTO users (
                     email,
