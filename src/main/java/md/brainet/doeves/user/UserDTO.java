@@ -5,6 +5,6 @@ import java.util.List;
 public record UserDTO(
         Integer id,
         String email,
-        List<Role> roles
+        Role role
 ) {
 }

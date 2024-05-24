@@ -10,6 +10,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class AuthenticationService {
 
@@ -34,7 +36,7 @@ public class AuthenticationService {
         );
         User principal = (User) authentication.getPrincipal();
         UserDTO userDTO = userDTOMapper.apply(principal);
-        String token = jwtUtil.issueTokenWithRoles(userDTO.email(), userDTO.roles());
+        String token = jwtUtil.issueTokenWithRoles(userDTO.email(), List.of(userDTO.role()));
         return new AuthenticationResponse(token, userDTO);
     }
 

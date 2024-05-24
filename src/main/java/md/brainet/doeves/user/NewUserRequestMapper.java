@@ -2,7 +2,6 @@ package md.brainet.doeves.user;
 
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
@@ -14,7 +13,6 @@ public class NewUserRequestMapper implements Function<NewUserRequest, User> {
         User user = new User();
         user.setEmail(request.email());
         user.setPassword(request.password());
-        user.setRoles(List.of(Role.USER));
         return user;
     }
 }

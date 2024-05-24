@@ -1,19 +1,18 @@
+CREATE TABLE role (
+    id INTEGER PRIMARY KEY,
+    name VARCHAR(30) NOT NULL
+);
+
+INSERT INTO role (id, name) VALUES (1, 'USER');
+
+INSERT INTO role (id, name) VALUES (2, 'ADMIN');
+
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     email VARCHAR(30) UNIQUE NOT NULL,
     password VARCHAR(100) NOT NULL,
-    is_enabled BOOLEAN DEFAULT true NOT NULL
-);
-
-
-CREATE TABLE role (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(30) NOT NULL
-);
-
-CREATE TABLE users_role (
-    role_id INT REFERENCES role(id) NOT NULL,
-    user_id INT REFERENCES users(id) NOT NULL
+    is_enabled BOOLEAN DEFAULT true NOT NULL,
+    role_id INTEGER REFERENCES role(id) DEFAULT 1
 );
 
 CREATE TABLE task (
@@ -26,6 +25,5 @@ CREATE TABLE task (
     owner_id INTEGER REFERENCES users(id) NOT NULL
 );
 
-INSERT INTO role (name) VALUES ('USER');
 
-INSERT INTO role (name) VALUES ('ADMIN');
+

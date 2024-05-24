@@ -4,8 +4,6 @@ import md.brainet.doeves.exception.PrincipalNotFoundException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.nio.file.attribute.UserPrincipalNotFoundException;
-
 @Service
 public class UserPermissionUtil {
 
@@ -32,11 +30,6 @@ public class UserPermissionUtil {
     }
 
     public boolean isAdmin(User user) {
-        for (Role role : user.getRoles()) {
-            if(role == Role.ADMIN) {
-                return true;
-            }
-        }
-        return false;
+        return user.getRole() == Role.ADMIN;
     }
 }

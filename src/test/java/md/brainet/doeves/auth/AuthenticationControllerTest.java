@@ -38,7 +38,7 @@ class AuthenticationControllerTest {
                 new UserDTO(
                         123,
                         "test@gmail.com",
-                        List.of(Role.USER)
+                        Role.USER
                 )
         );
 

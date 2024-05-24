@@ -13,7 +13,7 @@ public class User implements UserDetails {
     private String email;
     private String password;
     private boolean enabled;
-    private List<Role> roles;
+    private Role role;
 
     public Integer getId() {
         return id;
@@ -43,17 +43,17 @@ public class User implements UserDetails {
         this.enabled = enabled;
     }
 
-    public List<Role> getRoles() {
-        return roles;
+    public Role getRole() {
+        return role;
     }
 
-    public void setRoles(List<Role> roles) {
-        this.roles = roles;
+    public void setRole(Role role) {
+        this.role = role;
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return roles;
+        return List.of(role);
     }
 
     @Override

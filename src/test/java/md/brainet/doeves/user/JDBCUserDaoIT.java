@@ -29,17 +29,13 @@ class JDBCUserDaoIT extends IntegrationTestBase {
 
     UserResultSetMapper userResultSetMapper;
 
-    RoleDaoImpl roleDao;
-
     JDBCUserDao jdbcUserDao;
 
     @BeforeEach
     void setUp() {
         userResultSetMapper = new UserResultSetMapper();
-        roleDao = new RoleDaoImpl(jdbcTemplate);
         jdbcUserDao = new JDBCUserDao(
                 jdbcTemplate,
-                roleDao,
                 userResultSetMapper
         );
     }
@@ -53,7 +49,7 @@ class JDBCUserDaoIT extends IntegrationTestBase {
         user.setId(1);
         user.setEmail("test@mail.ru");
         user.setPassword("123456");
-        user.setRoles(List.of(Role.USER));
+        user.setRole(Role.USER);
 
         //when
         Optional<User> owner =
@@ -63,7 +59,7 @@ class JDBCUserDaoIT extends IntegrationTestBase {
         assertTrue(owner.isPresent());
         assertEquals(user.getEmail(), owner.get().getEmail());
         assertEquals(user.getId(), owner.get().getId());
-        assertEquals(user.getRoles(), owner.get().getRoles());
+        assertEquals(user.getRole(), owner.get().getRole());
     }
 
     @Test
@@ -157,5 +153,20 @@ class JDBCUserDaoIT extends IntegrationTestBase {
 
         //then
         assertFalse(user.isPresent());
+    }
+
+    @Test
+    void changeUserRoleByUserId_userExists_expectChangedRole() {
+        //given
+        var userId = 1;
+        Role expectedRole = Role.ADMIN;
+
+        //when
+        jdbcUserDao.changeUserRoleByUserId(userId, expectedRole);
+
+        //then
+        var user = jdbcUserDao.selectUserById(userId);
+        assertTrue(user.isPresent());
+        assertEquals(expectedRole, user.get().getRole());
     }
 }

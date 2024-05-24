@@ -28,26 +28,21 @@ public class JDBCUserDao implements UserDao {
                 u.password,
                 r.name as role_name
             FROM users u
-            LEFT JOIN users_role ur
-            ON ur.user_id = u.id
             LEFT JOIN role r
-            ON ur.role_id = r.id
+            ON u.role_id = r.id
             """;
 
     private final JdbcTemplate jdbcTemplate;
-    private final RoleDao roleDao;
     private final UserResultSetMapper resultSetMapper;
 
     public JDBCUserDao(JdbcTemplate jdbcTemplate,
-                       RoleDao roleDao,
                        UserResultSetMapper resultSetMapper) {
         this.jdbcTemplate = jdbcTemplate;
-        this.roleDao = roleDao;
         this.resultSetMapper = resultSetMapper;
     }
 
     @Override
-    public Optional<User> selectOwnerOfTaskWithId(int taskId) {
+    public Optional<User> selectOwnerOfTaskWithId(Integer taskId) {
         var sql = SELECT_USER_BY_ID_SQL + """
                 LEFT JOIN task t
                 ON t.owner_id = u.id
@@ -76,11 +71,6 @@ public class JDBCUserDao implements UserDao {
                     e
             );
         }
-
-        roleDao.insertRoleForUserId(
-                id,
-                Role.getDefault()
-        );
 
         return id;
     }
@@ -129,6 +119,21 @@ public class JDBCUserDao implements UserDao {
                 """;
 
         return selectUserByCriteria(email, sql);
+    }
+
+    @Override
+    public void changeUserRoleByUserId(Integer userId, Role role) {
+        var sql = """
+                UPDATE users
+                SET role_id = (
+                    SELECT id
+                    FROM role
+                    WHERE name = ?
+                )
+                WHERE id = ?;
+                """;
+
+        jdbcTemplate.update(sql, role.name(), userId);
     }
 
     private Optional<User> selectUserByCriteria(
