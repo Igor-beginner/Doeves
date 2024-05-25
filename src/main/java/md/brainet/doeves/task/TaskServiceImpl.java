@@ -85,7 +85,7 @@ public class TaskServiceImpl implements TaskService {
 
     private boolean isThereEvenOneChangeInTheTaskRequest(
             EditTaskRequest taskEditRequest) {
-
+        //TODO inject taskDao.selectTaskById + throw when task doesn't exist
         return taskEditRequest.name().isPresent() ||
                 taskEditRequest.description().isPresent() ||
                 taskEditRequest.dateOfDeadline().isPresent();

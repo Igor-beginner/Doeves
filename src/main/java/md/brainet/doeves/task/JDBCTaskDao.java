@@ -11,10 +11,7 @@ import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.util.Date;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Objects;
+import java.util.*;
 
 @Repository
 public class JDBCTaskDao implements TaskDao {
@@ -71,7 +68,7 @@ public class JDBCTaskDao implements TaskDao {
 
             return preparedStatement;
         }, keyHolder);
-
+        //TODO throw NoSuchElement
         return (int) keyHolder.getKeys().get("id");
     }
 
@@ -115,7 +112,7 @@ public class JDBCTaskDao implements TaskDao {
     }
 
     @Override
-    public Task selectById(int taskId) {
+    public Optional<Task> selectById(int taskId) {
         var sql = """
                 SELECT *
                 FROM task
@@ -131,6 +128,6 @@ public class JDBCTaskDao implements TaskDao {
                             .formatted(tasks)
             );
         }
-        return tasks.get(0);
+        return Optional.ofNullable(tasks.get(0));
     }
 }

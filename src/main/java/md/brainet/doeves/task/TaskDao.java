@@ -3,6 +3,7 @@ package md.brainet.doeves.task;
 import md.brainet.doeves.user.User;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface TaskDao {
 
@@ -14,7 +15,7 @@ public interface TaskDao {
 
     void removeById(int taskId);
 
-    Task selectById(int taskId);
+    Optional<Task> selectById(int taskId);
 
     void updateStatusByTaskId(int taskId, boolean complete);
 }

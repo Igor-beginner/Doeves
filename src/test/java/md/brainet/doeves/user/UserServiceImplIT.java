@@ -26,7 +26,6 @@ class UserServiceImplIT extends IntegrationTestBase {
     UserServiceImpl userService;
 
     @Test
-    @Sql(scripts = "classpath:data/init_test_data.sql")
     void makeUser_newUserNotExist_expectCorrectId() {
         //given
         Integer expectedId = 3;
@@ -47,7 +46,6 @@ class UserServiceImplIT extends IntegrationTestBase {
     }
 
     @Test
-    @Sql(scripts = "classpath:data/init_test_data.sql")
     void makeUser_newUserExist_expectException() {
         //given
         Integer expectedId = 1;
@@ -65,7 +63,6 @@ class UserServiceImplIT extends IntegrationTestBase {
     }
 
     @Test
-    @Sql(scripts = "classpath:data/init_test_data.sql")
     void findUser_userExists_expectCorrectId() {
         //given
         var expectedId = 2;
@@ -84,7 +81,6 @@ class UserServiceImplIT extends IntegrationTestBase {
     }
 
     @Test
-    @Sql(scripts = "classpath:data/init_test_data.sql")
     void findUser_userNotExists_ExpectNoSuchElementException() {
         //given
         var id = 231;

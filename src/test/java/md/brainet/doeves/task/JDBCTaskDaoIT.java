@@ -42,7 +42,6 @@ class JDBCTaskDaoIT extends IntegrationTestBase {
     }
 
     @Test
-    @Sql(scripts = "classpath:data/init_test_data.sql")
     void selectAllTasksWhereUserIdIs1_Return3Tasks() {
         //given
         var userId = 1;
@@ -56,7 +55,6 @@ class JDBCTaskDaoIT extends IntegrationTestBase {
     }
 
     @Test
-    @Sql(scripts = "classpath:data/init_test_data.sql")
     void insertTask_expectCorrectGeneratedId() {
         //given
         var expectedTaskId = 4;
@@ -73,13 +71,12 @@ class JDBCTaskDaoIT extends IntegrationTestBase {
     }
 
     @Test
-    @Sql(scripts = "classpath:data/init_test_data.sql")
     void update_taskExists_checkChanges() {
         //given
         var newName = "23123";
         var newDescription = "31231";
 
-        Task task = jdbcTaskDao.selectById(1);
+        Task task = jdbcTaskDao.selectById(1).get();
         task.setName(newName);
         task.setDescription(newDescription);
 
@@ -87,19 +84,17 @@ class JDBCTaskDaoIT extends IntegrationTestBase {
         jdbcTaskDao.update(task);
 
         //then
-        task = jdbcTaskDao.selectById(1);
+        task = jdbcTaskDao.selectById(1).get();
         assertEquals(newName, task.getName());
         assertEquals(newDescription, task.getDescription());
     }
 
     @Test
-    @Sql(scripts = "classpath:data/init_test_data.sql")
     void update_taskNotExists_checkChanges() {
         // TODO
     }
 
     @Test
-    @Sql(scripts = "classpath:data/init_test_data.sql")
     void removeById_suchTaskExists_expectExceptionOnSelectThisAfter() {
         //given
         var taskId = 1;
@@ -115,27 +110,24 @@ class JDBCTaskDaoIT extends IntegrationTestBase {
     }
 
     @Test
-    @Sql(scripts = "classpath:data/init_test_data.sql")
     void removeById_suchTaskNotExists_expectExceptionNotFound() {
         //TODO implement 'if' logic in method removeById and write this test
     }
 
     @Test
-    @Sql(scripts = "classpath:data/init_test_data.sql")
     void updateStatusByTaskId_suchTaskExists_expectMadeChanges() {
         //given
         var task = jdbcTaskDao.selectById(1);
 
         //when
-        jdbcTaskDao.updateStatusByTaskId(task.getId(), true);
+        jdbcTaskDao.updateStatusByTaskId(task.get().getId(), true);
 
         //then
         task = jdbcTaskDao.selectById(1);
-        assertTrue(task.isComplete());
+        assertTrue(task.get().isComplete());
     }
 
     @Test
-    @Sql(scripts = "classpath:data/init_test_data.sql")
     void updateStatusByTaskId_suchTaskNotExists_expectNoSuchElementException() {
         // TODO
     }

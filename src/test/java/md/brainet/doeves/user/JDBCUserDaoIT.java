@@ -41,7 +41,6 @@ class JDBCUserDaoIT extends IntegrationTestBase {
     }
 
     @Test
-    @Sql(scripts = "classpath:data/init_test_data.sql")
     void selectOwnerOfTaskWithId_taskIdExists_expectCorrectOwner() {
         //given
         var taskId = 1;
@@ -64,7 +63,6 @@ class JDBCUserDaoIT extends IntegrationTestBase {
     }
 
     @Test
-    @Sql(scripts = "classpath:data/init_test_data.sql")
     void selectOwnerOfTaskWithId_taskIdNotExists_expectException() {
         //given
         var taskId = 200;
@@ -77,7 +75,6 @@ class JDBCUserDaoIT extends IntegrationTestBase {
     }
 
     @Test
-    @Sql(scripts = "classpath:data/init_test_data.sql")
     void insertUser_emailUniqueAndPasswordValid_expectCorrectId() {
         //given
         var expectedId = 3;
@@ -93,7 +90,6 @@ class JDBCUserDaoIT extends IntegrationTestBase {
     }
 
     @Test
-    @Sql(scripts = "classpath:data/init_test_data.sql")
     void insertUser_emailAlreadyExists_expectException() {
         //given
         var user = new User();
@@ -108,7 +104,6 @@ class JDBCUserDaoIT extends IntegrationTestBase {
     }
 
     @Test
-    @Sql(scripts = "classpath:data/init_test_data.sql")
     void selectUserById_idExists_expectCorrectEmail() {
         //given
         var id = 1;
@@ -123,7 +118,6 @@ class JDBCUserDaoIT extends IntegrationTestBase {
     }
 
     @Test
-    @Sql(scripts = "classpath:data/init_test_data.sql")
     void selectUserById_idNotExists_expectUserNotPresent() {
         //given
         var id = 31231;
@@ -136,7 +130,6 @@ class JDBCUserDaoIT extends IntegrationTestBase {
     }
 
     @Test
-    @Sql(scripts = "classpath:data/init_test_data.sql")
     void selectUserByEmail_emailExists_expectCorrectId() {
         //given
         var id = 1;
@@ -151,7 +144,6 @@ class JDBCUserDaoIT extends IntegrationTestBase {
     }
 
     @Test
-    @Sql(scripts = "classpath:data/init_test_data.sql")
     void selectUserByEmail_emailNotExists_expectUserNotPresent() {
         //given
         var email = "testsadfas@mail.ru";
@@ -164,7 +156,6 @@ class JDBCUserDaoIT extends IntegrationTestBase {
     }
 
     @Test
-    @Sql(scripts = "classpath:data/init_test_data.sql")
     void changeUserRoleByUserId_userExists_expectChangedRole() {
         //given
         var userId = 1;
