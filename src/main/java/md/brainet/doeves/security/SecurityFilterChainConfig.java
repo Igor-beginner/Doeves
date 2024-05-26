@@ -1,5 +1,6 @@
 package md.brainet.doeves.security;
 
+import md.brainet.doeves.exception.DelegatedAuthEntryPoint;
 import md.brainet.doeves.jwt.JWTAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -23,12 +24,16 @@ public class SecurityFilterChainConfig {
 
     private final AuthenticationProvider authenticationProvider;
     private final JWTAuthenticationFilter jwtAuthenticationFilter;
+    private final DelegatedAuthEntryPoint delegatedAuthEntryPoint;
 
-    public SecurityFilterChainConfig(AuthenticationProvider authenticationProvider,
-                                     JWTAuthenticationFilter jwtAuthenticationFilter
-                                    ) {
+    public SecurityFilterChainConfig(
+            AuthenticationProvider authenticationProvider,
+            JWTAuthenticationFilter jwtAuthenticationFilter,
+            DelegatedAuthEntryPoint delegatedAuthEntryPoint) {
+
         this.authenticationProvider = authenticationProvider;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.delegatedAuthEntryPoint = delegatedAuthEntryPoint;
     }
 
     @Bean
@@ -54,10 +59,10 @@ public class SecurityFilterChainConfig {
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
+                )
+                .exceptionHandling(exception ->
+                        exception.authenticationEntryPoint(delegatedAuthEntryPoint)
                 );
-//                .exceptionHandling(exception ->
-//                        exception.authenticationEntryPoint(authenticationEntryPoint)
-//                );
         return http.build();
     }
 }
