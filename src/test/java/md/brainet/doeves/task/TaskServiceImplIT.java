@@ -3,10 +3,12 @@ package md.brainet.doeves.task;
 import md.brainet.doeves.IntegrationTestBase;
 import md.brainet.doeves.exception.TaskNotFoundException;
 import md.brainet.doeves.exception.UserNotFoundException;
+import md.brainet.doeves.security.SecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 
 import java.util.Optional;
 
@@ -88,9 +90,9 @@ class TaskServiceImplIT extends IntegrationTestBase {
         var taskId = 1;
         var oldTaskFromDB = taskDao.selectById(taskId).get();
         var request = new EditTaskRequest(
-                Optional.of("Task321"),
-                Optional.of(oldTaskFromDB.getDescription()),
-                Optional.ofNullable(oldTaskFromDB.getDeadline())
+                "Task321",
+                oldTaskFromDB.getDescription(),
+                oldTaskFromDB.getDeadline()
         );
 
         //when
@@ -106,9 +108,9 @@ class TaskServiceImplIT extends IntegrationTestBase {
         //given
         var taskId = 3213;
         var request = new EditTaskRequest(
-                Optional.of("Task1"),
-                Optional.empty(),
-                Optional.empty()
+                "Task1",
+                null,
+                null
         );
 
         //when

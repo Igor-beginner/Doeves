@@ -1,5 +1,6 @@
 package md.brainet.doeves.task;
 
+import jakarta.validation.Valid;
 import md.brainet.doeves.user.User;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -20,30 +21,31 @@ public class TaskController {
     }
 
     @ResponseStatus(HttpStatus.OK)
+    @GetMapping("all")
     public ResponseEntity<?> fetchAll(@AuthenticationPrincipal User user) {
         List<Task> tasks = taskService.fetchAllUserTasks(user.getId());
         return ResponseEntity.ok(tasks);
     }
 
-    @ResponseStatus(HttpStatus.OK)
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
     public ResponseEntity<?> make(
-            @RequestBody NewTaskRequest newTaskRequest,
+            @Valid @RequestBody NewTaskRequest newTaskRequest,
             @AuthenticationPrincipal User user) {
 
         int taskId = taskService.makeTask(user.getId(), newTaskRequest);
-        return ResponseEntity.ok(
+        return new ResponseEntity<>(
                 new TaskResponse(
                         "Task with id [%s] is created".formatted(taskId)
-                )
+                ), HttpStatus.CREATED
         );
     }
 
     @ResponseStatus(HttpStatus.OK)
     @PatchMapping("{id}")
     public ResponseEntity<?> edit(
-            @RequestParam int id,
-            @RequestBody EditTaskRequest taskEditRequest) {
+            @PathVariable("id") int id,
+            @Valid @RequestBody EditTaskRequest taskEditRequest) {
 
         taskService.editTask(id, taskEditRequest);
         return ResponseEntity.ok(
@@ -53,9 +55,9 @@ public class TaskController {
         );
     }
 
-    @ResponseStatus(HttpStatus.OK)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("{id}")
-    public ResponseEntity<?> delete(@RequestParam int taskId) {
+    public ResponseEntity<?> delete(@PathVariable("id") int taskId) {
 
         taskService.deleteTask(taskId);
         return ResponseEntity.ok(
@@ -66,10 +68,10 @@ public class TaskController {
     }
 
     @ResponseStatus(HttpStatus.OK)
-    @PatchMapping("status/{id}")
+    @PatchMapping("{id}/status")
     public ResponseEntity<?> changeStatus(
-            @RequestParam int taskId,
-            @RequestBody boolean complete) {
+            @PathVariable("id") int taskId,
+            @RequestParam Boolean complete) {
 
         taskService.changeStatus(taskId, complete);
         return ResponseEntity.ok(

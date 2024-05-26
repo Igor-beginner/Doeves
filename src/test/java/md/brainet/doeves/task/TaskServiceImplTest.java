@@ -106,9 +106,9 @@ class TaskServiceImplTest {
         //given
         var taskId = 3;
         var request = new EditTaskRequest(
-                Optional.of("sda"),
-                Optional.of("fdsasd"),
-                Optional.empty()
+                "sda",
+                "fdsasd",
+                null
         );
         var task = new Task();
         doReturn(task)
@@ -129,9 +129,9 @@ class TaskServiceImplTest {
         //given
         var taskId = 312;
         var request = new EditTaskRequest(
-                Optional.empty(),
-                Optional.empty(),
-                Optional.of(LocalDateTime.now())
+                null,
+                null,
+                LocalDateTime.now()
         );
         var task = new Task();
 

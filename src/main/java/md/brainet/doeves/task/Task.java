@@ -1,5 +1,6 @@
 package md.brainet.doeves.task;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.springframework.data.relational.core.sql.In;
 
 import java.time.LocalDateTime;
@@ -12,6 +13,7 @@ public class Task {
     private boolean complete;
     private LocalDateTime dateOfCreate;
     private LocalDateTime deadline;
+    @JsonIgnore
     private Integer ownerId;
 
     public Integer getId() {

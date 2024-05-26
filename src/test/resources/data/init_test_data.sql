@@ -23,7 +23,7 @@ INSERT INTO task(
           'Task1',
           'Description1',
           false,
-          CURRENT_TIMESTAMP,
+          '2024-05-26T21:43:19.229697',
           null,
           1
 );
@@ -41,7 +41,7 @@ INSERT INTO task(
              'Task2',
              'Description2',
              true,
-             CURRENT_TIMESTAMP,
+             '2024-05-26T21:43:19.229697',
              null,
              1
          );
@@ -59,9 +59,28 @@ INSERT INTO task(
              'Task3',
              'Description3',
              false,
-             CURRENT_TIMESTAMP,
-             null,
+             '2024-05-26T21:43:19.229697',
+             '2024-06-10T12:00:00.229697',
              1
          );
 
 SELECT SETVAL('task_id_seq', (SELECT MAX(id) FROM users) + 1);
+
+INSERT INTO task(
+    id,
+    name,
+    description,
+    is_complete,
+    date_of_create,
+    deadline,
+    owner_id
+) VALUES (
+             404,
+             'Task3',
+             'Description3',
+             false,
+             '2024-05-26T21:43:19.229697',
+             '2024-06-10T12:00:00.229697',
+             2
+         );
+

@@ -10,14 +10,11 @@ public class EditTaskRequestMapper implements Function<EditTaskRequest, Task> {
     public Task apply(EditTaskRequest editTaskRequest) {
         Task task = new Task();
 
-        var name = editTaskRequest.name();
-        name.ifPresent(task::setName);
+        task.setName(editTaskRequest.name());
 
-        var description = editTaskRequest.description();
-        description.ifPresent(task::setDescription);
+        task.setDescription(editTaskRequest.description());
 
-        var deadline = editTaskRequest.dateOfDeadline();
-        deadline.ifPresent(task::setDeadline);
+        task.setDeadline(editTaskRequest.dateOfDeadline());
 
         return task;
     }

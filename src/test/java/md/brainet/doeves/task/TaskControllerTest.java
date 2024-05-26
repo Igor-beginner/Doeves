@@ -107,9 +107,9 @@ class TaskControllerTest {
         //given
         var taskId = 30;
         EditTaskRequest request = new EditTaskRequest(
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty()
+                null,
+                null,
+                null
         );
 
         //when

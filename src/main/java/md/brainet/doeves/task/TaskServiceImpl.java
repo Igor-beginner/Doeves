@@ -23,19 +23,13 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    @PreAuthorize(
-            "@userPermissionUtil.haveEnoughRightsOver(#id)"
-    )
-    public List<Task> fetchAllUserTasks(@Param("id") Integer userId) {
+    public List<Task> fetchAllUserTasks(Integer userId) {
         return taskDao.selectAllTasksWhereUserIdIs(userId);
     }
 
     @Override
-    @PreAuthorize(
-            "@userPermissionUtil.haveEnoughRightsOver(#id)"
-    )
     public int makeTask(
-            @Param("id") Integer userId,
+            Integer userId,
             NewTaskRequest newTaskRequest) {
 
         Task task = taskMapper.apply(newTaskRequest);
@@ -44,12 +38,8 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    @PreAuthorize(
-            "@userPermissionUtil.haveEnoughRightsOver(" +
-                    "@userDao.selectOwnerOfTaskWithId(#id))"
-    )
     public void editTask(
-            @Param("id") Integer taskId,
+            Integer taskId,
             EditTaskRequest taskEditRequest) {
 
         Task task = editTaskRequestMapper.apply(taskEditRequest);
@@ -62,11 +52,7 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    @PreAuthorize(
-            "@userPermissionUtil.haveEnoughRightsOver(" +
-                    "@userDao.selectOwnerOfTaskWithId(#id))"
-    )
-    public void deleteTask(@Param("id") Integer taskId) {
+    public void deleteTask(Integer taskId) {
         boolean updated = taskDao.removeById(taskId);
 
         if(!updated) {
@@ -75,24 +61,13 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    @PreAuthorize(
-            "@userPermissionUtil.haveEnoughRightsOver(" +
-                    "@userDao.selectOwnerOfTaskWithId(#id))"
-    )
     public void changeStatus(
-            @Param("id") Integer taskId,
+            Integer taskId,
             Boolean complete) {
         boolean updated = taskDao.updateStatusByTaskId(taskId, complete);
 
         if (!updated) {
             throw new TaskNotFoundException(taskId);
         }
-    }
-
-    private boolean isThereEvenOneChangeInTheTaskRequest(
-            EditTaskRequest taskEditRequest) {
-        return taskEditRequest.name().isPresent() ||
-                taskEditRequest.description().isPresent() ||
-                taskEditRequest.dateOfDeadline().isPresent();
     }
 }

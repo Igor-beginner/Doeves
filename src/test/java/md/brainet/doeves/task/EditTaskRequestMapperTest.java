@@ -23,9 +23,9 @@ class EditTaskRequestMapperTest {
         var description = "description";
 
         var request = new EditTaskRequest(
-                Optional.of(name),
-                Optional.of(description),
-                Optional.empty()
+                name,
+                description,
+                null
         );
 
         //when
