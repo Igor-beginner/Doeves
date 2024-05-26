@@ -1,7 +1,6 @@
 package md.brainet.doeves.task;
 
-import md.brainet.doeves.exception.RequestDoesNotContainChangesException;
-import md.brainet.doeves.user.User;
+import md.brainet.doeves.exception.TaskNotFoundException;
 import org.springframework.data.repository.query.Param;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -53,13 +52,13 @@ public class TaskServiceImpl implements TaskService {
             @Param("id") Integer taskId,
             EditTaskRequest taskEditRequest) {
 
-        if (!isThereEvenOneChangeInTheTaskRequest(taskEditRequest)) {
-            throw new RequestDoesNotContainChangesException("Nothing to edit");
-        }
-
         Task task = editTaskRequestMapper.apply(taskEditRequest);
         task.setId(taskId);
-        taskDao.update(task);
+
+        boolean updated = taskDao.update(task);
+        if (!updated) {
+            throw new TaskNotFoundException(taskId);
+        }
     }
 
     @Override
@@ -68,7 +67,11 @@ public class TaskServiceImpl implements TaskService {
                     "@userDao.selectOwnerOfTaskWithId(#id))"
     )
     public void deleteTask(@Param("id") Integer taskId) {
-        taskDao.removeById(taskId);
+        boolean updated = taskDao.removeById(taskId);
+
+        if(!updated) {
+            throw new TaskNotFoundException(taskId);
+        }
     }
 
     @Override
@@ -79,13 +82,15 @@ public class TaskServiceImpl implements TaskService {
     public void changeStatus(
             @Param("id") Integer taskId,
             Boolean complete) {
+        boolean updated = taskDao.updateStatusByTaskId(taskId, complete);
 
-        taskDao.updateStatusByTaskId(taskId, complete);
+        if (!updated) {
+            throw new TaskNotFoundException(taskId);
+        }
     }
 
     private boolean isThereEvenOneChangeInTheTaskRequest(
             EditTaskRequest taskEditRequest) {
-        //TODO inject taskDao.selectTaskById + throw when task doesn't exist
         return taskEditRequest.name().isPresent() ||
                 taskEditRequest.description().isPresent() ||
                 taskEditRequest.dateOfDeadline().isPresent();

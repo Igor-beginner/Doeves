@@ -156,17 +156,31 @@ class JDBCUserDaoIT extends IntegrationTestBase {
     }
 
     @Test
-    void changeUserRoleByUserId_userExists_expectChangedRole() {
+    void changeUserRoleByUserId_userExists_expectTrue() {
         //given
         var userId = 1;
         Role expectedRole = Role.ADMIN;
 
         //when
-        jdbcUserDao.changeUserRoleByUserId(userId, expectedRole);
+        boolean updated = jdbcUserDao.changeUserRoleByUserId(userId, expectedRole);
 
         //then
         var user = jdbcUserDao.selectUserById(userId);
         assertTrue(user.isPresent());
         assertEquals(expectedRole, user.get().getRole());
+        assertTrue(updated);
+    }
+
+    @Test
+    void changeUserRoleByUserId_userNotExists_expectFalse() {
+        //given
+        var userId = 32;
+        Role expectedRole = Role.ADMIN;
+
+        //when
+        boolean updated = jdbcUserDao.changeUserRoleByUserId(userId, expectedRole);
+
+        //then
+        assertFalse(updated);
     }
 }

@@ -106,7 +106,7 @@ public class JDBCUserDao implements UserDao {
     }
 
     @Override
-    public void changeUserRoleByUserId(Integer userId, Role role) {
+    public boolean changeUserRoleByUserId(Integer userId, Role role) {
         var sql = """
                 UPDATE users
                 SET role_id = (
@@ -117,7 +117,7 @@ public class JDBCUserDao implements UserDao {
                 WHERE id = ?;
                 """;
 
-        jdbcTemplate.update(sql, role.name(), userId);
+        return jdbcTemplate.update(sql, role.name(), userId) > 0;
     }
 
     private Optional<User> selectUserByCriteria(

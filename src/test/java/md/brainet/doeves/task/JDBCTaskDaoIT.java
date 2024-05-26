@@ -91,27 +91,47 @@ class JDBCTaskDaoIT extends IntegrationTestBase {
 
     @Test
     void update_taskNotExists_checkChanges() {
-        // TODO
+        //given
+        var newId = 1010;
+        var newName = "23123";
+        var newDescription = "31231";
+
+        Task task = jdbcTaskDao.selectById(1).get();
+        task.setId(newId);
+        task.setName(newName);
+        task.setDescription(newDescription);
+
+        //when
+        boolean updated = jdbcTaskDao.update(task);
+
+        //then
+        assertFalse(updated);
+        var foundTask = jdbcTaskDao.selectById(newId);
+        assertFalse(foundTask.isPresent());
     }
 
     @Test
-    void removeById_suchTaskExists_expectExceptionOnSelectThisAfter() {
+    void removeById_suchTaskExists_expectTrue() {
         //given
         var taskId = 1;
 
         //when
-        jdbcTaskDao.removeById(taskId);
+        boolean removed = jdbcTaskDao.removeById(taskId);
 
         //then
-        assertThrows(
-                NoSuchElementException.class,
-                () -> jdbcTaskDao.selectById(taskId)
-        );
+        assertTrue(removed);
     }
 
     @Test
-    void removeById_suchTaskNotExists_expectExceptionNotFound() {
-        //TODO implement 'if' logic in method removeById and write this test
+    void removeById_suchTaskNotExists_expectFalse() {
+        //given
+        var taskId = 32;
+
+        //when
+        boolean removed = jdbcTaskDao.removeById(taskId);
+
+        //then
+        assertFalse(removed);
     }
 
     @Test
@@ -120,15 +140,49 @@ class JDBCTaskDaoIT extends IntegrationTestBase {
         var task = jdbcTaskDao.selectById(1);
 
         //when
-        jdbcTaskDao.updateStatusByTaskId(task.get().getId(), true);
+        boolean updated = jdbcTaskDao
+                .updateStatusByTaskId(task.get().getId(), true);
 
         //then
         task = jdbcTaskDao.selectById(1);
         assertTrue(task.get().isComplete());
+        assertTrue(updated);
     }
 
     @Test
-    void updateStatusByTaskId_suchTaskNotExists_expectNoSuchElementException() {
-        // TODO
+    void updateStatusByTaskId_suchTaskNotExists_expectZero() {
+        //given
+        var taskId = 32;
+
+        //when
+        boolean updated = jdbcTaskDao
+                .updateStatusByTaskId(taskId, true);
+
+        //then
+        assertFalse(updated);
+    }
+
+    @Test
+    void userExists_whenUserExists_expectTrue() {
+        //given
+        var userId = 1;
+
+        //when
+        boolean exists = jdbcTaskDao.userExists(userId);
+
+        //then
+        assertTrue(exists);
+    }
+
+    @Test
+    void userExists_whenUserNotExists_expectFalse() {
+        //given
+        var userId = 32;
+
+        //when
+        boolean exists = jdbcTaskDao.userExists(userId);
+
+        //then
+        assertFalse(exists);
     }
 }

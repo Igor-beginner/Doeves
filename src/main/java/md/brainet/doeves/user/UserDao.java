@@ -7,5 +7,5 @@ public interface UserDao {
     Optional<User> selectOwnerOfTaskWithId(Integer taskId);
     Integer insertUserAndDefaultRole(User user);
     Optional<User> selectUserByEmail(String email);
-    void changeUserRoleByUserId(Integer userId, Role role);
+    boolean changeUserRoleByUserId(Integer userId, Role role);
 }

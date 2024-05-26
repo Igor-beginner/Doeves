@@ -1,16 +1,13 @@
 package md.brainet.doeves.task;
 
 import md.brainet.doeves.IntegrationTestBase;
-import md.brainet.doeves.exception.RequestDoesNotContainChangesException;
-import org.junit.jupiter.api.Assertions;
+import md.brainet.doeves.exception.TaskNotFoundException;
+import md.brainet.doeves.exception.UserNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -45,13 +42,13 @@ class TaskServiceImplIT extends IntegrationTestBase {
         Executable executable = () -> taskService.fetchAllUserTasks(userId);
 
         //then
-        assertThrows(NoSuchElementException.class, executable);
+        assertThrows(UserNotFoundException.class, executable);
     }
 
     @Test
     void makeTask_userExists_expectTaskId() {
         //given
-        var userId = 3;
+        var userId = 2;
         var expectedTaskId = 4;
         var request = new NewTaskRequest(
                 "Test1",
@@ -82,7 +79,7 @@ class TaskServiceImplIT extends IntegrationTestBase {
         );
 
         //then
-        assertThrows(NoSuchElementException.class, executable);
+        assertThrows(UserNotFoundException.class, executable);
     }
 
     @Test
@@ -91,7 +88,7 @@ class TaskServiceImplIT extends IntegrationTestBase {
         var taskId = 1;
         var oldTaskFromDB = taskDao.selectById(taskId).get();
         var request = new EditTaskRequest(
-                Optional.of("Task1"),
+                Optional.of("Task321"),
                 Optional.of(oldTaskFromDB.getDescription()),
                 Optional.ofNullable(oldTaskFromDB.getDeadline())
         );
@@ -118,25 +115,7 @@ class TaskServiceImplIT extends IntegrationTestBase {
         Executable executable = () -> taskService.editTask(taskId, request);
 
         //then
-        assertThrows(NoSuchElementException.class, executable);
-    }
-
-    @Test
-    void editTask_taskHaveNotChanged_ExpectException() {
-        //given
-        var taskId = 2;
-        var task = taskDao.selectById(taskId).get();
-        var request = new EditTaskRequest(
-                Optional.of(task.getName()),
-                Optional.of(task.getDescription()),
-                Optional.of(task.getDeadline())
-        );
-
-        //when
-        Executable executable = () -> taskService.editTask(taskId, request);
-
-        //then
-        assertThrows(RequestDoesNotContainChangesException.class, executable);
+        assertThrows(TaskNotFoundException.class, executable);
     }
 
     @Test
@@ -160,7 +139,7 @@ class TaskServiceImplIT extends IntegrationTestBase {
         Executable executable = () -> taskService.deleteTask(taskId);
 
         //then
-        assertThrows(NoSuchElementException.class, executable);
+        assertThrows(TaskNotFoundException.class, executable);
     }
 
     @Test
@@ -187,6 +166,6 @@ class TaskServiceImplIT extends IntegrationTestBase {
         Executable executable = () -> taskService.changeStatus(taskId, complete);
 
         //then
-        assertThrows(NoSuchElementException.class, executable);
+        assertThrows(TaskNotFoundException.class, executable);
     }
 }

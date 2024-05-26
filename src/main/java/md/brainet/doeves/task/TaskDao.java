@@ -11,11 +11,12 @@ public interface TaskDao {
 
     int insertTask(Task task);
 
-    void update(Task task);
+    boolean update(Task task);
 
-    void removeById(int taskId);
+    boolean removeById(int taskId);
 
     Optional<Task> selectById(int taskId);
 
-    void updateStatusByTaskId(int taskId, boolean complete);
+    boolean updateStatusByTaskId(int taskId, boolean complete);
+    boolean userExists(int userId);
 }

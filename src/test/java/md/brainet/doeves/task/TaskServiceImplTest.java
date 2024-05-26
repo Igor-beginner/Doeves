@@ -1,6 +1,5 @@
 package md.brainet.doeves.task;
 
-import md.brainet.doeves.exception.RequestDoesNotContainChangesException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
@@ -115,6 +114,9 @@ class TaskServiceImplTest {
         doReturn(task)
                 .when(editTaskRequestMapper).apply(request);
 
+        doReturn(true)
+                .when(taskDao).update(task);
+
         //when
         taskService.editTask(taskId, request);
 
@@ -131,41 +133,19 @@ class TaskServiceImplTest {
                 Optional.empty(),
                 Optional.of(LocalDateTime.now())
         );
+        var task = new Task();
 
-        doReturn(Optional.empty())
-                .when(taskDao).selectById(taskId);
+        doReturn(task)
+                .when(editTaskRequestMapper).apply(request);
+
+        doReturn(false)
+                .when(taskDao).update(task);
 
         //when
         Executable executable = () -> taskService.editTask(taskId, request);
 
         //then
         assertThrows(NoSuchElementException.class, executable);
-    }
-
-    @Test
-    void editTask_taskHaveNotChanged_ExpectException() {
-        //given
-        var givenTask = new Task();
-        givenTask.setId(32);
-        givenTask.setName("dsadsda");
-        givenTask.setDescription("dfasdsf");
-        givenTask.setDeadline(LocalDateTime.now());
-
-        var request = new EditTaskRequest(
-                Optional.of(givenTask.getName()),
-                Optional.of(givenTask.getDescription()),
-                Optional.of(givenTask.getDeadline())
-        );
-
-        doReturn(givenTask)
-                .when(taskDao).selectById(givenTask.getId());
-
-        //when
-        Executable executable = () -> taskService
-                .editTask(givenTask.getId(), request);
-
-        //then
-        assertThrows(RequestDoesNotContainChangesException.class, executable);
     }
 
     @Test
