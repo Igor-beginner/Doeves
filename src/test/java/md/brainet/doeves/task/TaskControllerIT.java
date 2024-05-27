@@ -140,7 +140,7 @@ class TaskControllerIT extends IntegrationTestBase {
                         }
                     """.formatted(newName))
                 .contentType(MediaType.APPLICATION_JSON)
-        ).andExpect(status().isNotFound());
+        ).andExpect(status().isForbidden());
     }
 
     @Test
@@ -158,7 +158,7 @@ class TaskControllerIT extends IntegrationTestBase {
     @Test
     void delete_notExistTask_expect404() throws Exception {
         mockMvc.perform(delete("/api/v1/task/4053"))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -188,6 +188,6 @@ class TaskControllerIT extends IntegrationTestBase {
                     patch("/api/v1/task/4053/status")
                             .param("complete", "true")
                             .contentType(MediaType.APPLICATION_JSON)
-                ).andExpect(status().isNotFound());
+                ).andExpect(status().isForbidden());
     }
 }

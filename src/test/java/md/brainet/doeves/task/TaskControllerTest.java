@@ -98,7 +98,7 @@ class TaskControllerTest {
                 ).getMessage(),
                 ((TaskResponse)response.getBody()).getMessage()
         );
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
     }
 
 

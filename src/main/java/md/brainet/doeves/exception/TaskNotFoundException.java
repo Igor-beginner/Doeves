@@ -9,7 +9,7 @@ import java.util.NoSuchElementException;
 public class TaskNotFoundException extends NoSuchElementException {
     public TaskNotFoundException(Integer userId) {
         super(
-                "User with id [%s] doesn't exist".formatted(userId)
+                "Task with id [%s] doesn't exist".formatted(userId)
         );
     }
 }

@@ -11,8 +11,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -28,7 +28,7 @@ class UserControllerIT extends IntegrationTestBase {
         var json = """
                 {
                     "email" : "valeratest@gmail.com",
-                    "password" : "dsafsdffsdaf"
+                    "password" : "Qwerty123"
                 }
                 """;
         //when
@@ -49,7 +49,7 @@ class UserControllerIT extends IntegrationTestBase {
         var json = """
                 {
                     "email" : "test@mail.ru",
-                    "password" : "73271737123"
+                    "password" : "Qwerty123"
                 }
                 """;
         //when
@@ -60,44 +60,46 @@ class UserControllerIT extends IntegrationTestBase {
                 //then
         ).andExpectAll(
                 status().is(HttpStatus.CONFLICT.value()),
-                content().json("""
-                    {
-                        "path" : "/api/v1/user/make",
-                        "message" : "Email [test@mail.ru] already exists.",
-                        "status_code" : 409,
-                        "date" : "%s"
-                    }
-                """)
+                jsonPath("$.path")
+                        .value("/api/v1/user/make"),
+
+                jsonPath("$.message")
+                        .value("Email [test@mail.ru] already exists."),
+
+                jsonPath("$.status_code")
+                        .value(409),
+
+                jsonPath("$.date")
+                        .exists()
         );
     }
 
     @Test
     void makeNewUser_emailNotValid_expect400() throws Exception {
-        //given
-        var json = """
-                    
-                """;
         //when
         mockMvc.perform(
                 post("/api/v1/user/make")
                         .content("""
                                 {
                                     "email" : "testmail.ru",
-                                    "password" : "73271737123"
+                                    "password" : "Qwerty123"
                                 }
                                 """)
                         .contentType(MediaType.APPLICATION_JSON)
                 //then
         ).andExpectAll(
-                status().is(HttpStatus.BAD_REQUEST.value()),
-                content().json("""
-                    {
-                        "path" : "/api/v1/user/make",
-                        "message" : "Email [testmail.ru] isn't valid.",
-                        "status_code" : 400,
-                        "date" : "%s"
-                    }
-                """)
+                status().isBadRequest(),
+                jsonPath("$.path")
+                        .value("/api/v1/user/make"),
+
+                jsonPath("$.message")
+                        .value("Email [testmail.ru] isn't valid."),
+
+                jsonPath("$.status_code")
+                        .value(400),
+
+                jsonPath("$.date")
+                        .exists()
         );
     }
 
@@ -118,14 +120,17 @@ class UserControllerIT extends IntegrationTestBase {
                 //then
         ).andExpectAll(
                 status().is(HttpStatus.BAD_REQUEST.value()),
-                content().json("""
-                    {
-                        "path" : "/api/v1/user/make",
-                        "message" : "Password isn't valid.",
-                        "status_code" : 400,
-                        "date" : "%s"
-                    }
-                """)
+                jsonPath("$.path")
+                        .value("/api/v1/user/make"),
+
+                jsonPath("$.message")
+                        .value("Password is not valid!"),
+
+                jsonPath("$.status_code")
+                        .value(400),
+
+                jsonPath("$.date")
+                        .exists()
         );
     }
 }

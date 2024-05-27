@@ -5,9 +5,11 @@ import md.brainet.doeves.auth.AuthenticationService;
 import md.brainet.doeves.user.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,9 +22,11 @@ public class TaskController {
     private final static Logger LOG = LoggerFactory.getLogger(AuthenticationService.class);
 
     private final TaskService taskService;
+    private final TaskPermissionUtil taskPermissionUtil;
 
-    public TaskController(TaskService taskService) {
+    public TaskController(TaskService taskService, TaskPermissionUtil taskPermissionUtil) {
         this.taskService = taskService;
+        this.taskPermissionUtil = taskPermissionUtil;
     }
 
     @ResponseStatus(HttpStatus.OK)
@@ -51,10 +55,11 @@ public class TaskController {
 
     @ResponseStatus(HttpStatus.OK)
     @PatchMapping("{id}")
+    @PreAuthorize("@taskPermissionUtil.haveEnoughRights(#user.email, #taskId)")
     public ResponseEntity<?> edit(
-            @PathVariable("id") int id,
+            @Param("taskId") @PathVariable("id") int id,
             @Valid @RequestBody EditTaskRequest taskEditRequest,
-            @AuthenticationPrincipal User user) {
+            @Param("user") @AuthenticationPrincipal User user) {
 
         taskService.editTask(id, taskEditRequest);
         LOG.info("Edit task[id={}] request was performed and received from [{}]", id, user.getEmail());
@@ -67,9 +72,10 @@ public class TaskController {
 
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("{id}")
+    @PreAuthorize("@taskPermissionUtil.haveEnoughRights(#user.email, #taskId)")
     public ResponseEntity<?> delete(
-            @PathVariable("id") int taskId,
-            @AuthenticationPrincipal User user) {
+            @Param("taskId") @PathVariable("id") int taskId,
+            @Param("user") @AuthenticationPrincipal User user) {
 
         taskService.deleteTask(taskId);
         LOG.info("Delete task[id={}] request was performed and received from [{}]", taskId, user.getEmail());
@@ -82,10 +88,11 @@ public class TaskController {
 
     @ResponseStatus(HttpStatus.OK)
     @PatchMapping("{id}/status")
+    @PreAuthorize("@taskPermissionUtil.haveEnoughRights(#user.email, #taskId)")
     public ResponseEntity<?> changeStatus(
-            @PathVariable("id") int taskId,
+            @Param("taskId") @PathVariable("id") int taskId,
             @RequestParam Boolean complete,
-            @AuthenticationPrincipal User user) {
+            @Param("user") @AuthenticationPrincipal User user) {
 
         taskService.changeStatus(taskId, complete);
         LOG.info("Change status task[id={}] request was performed and received from [{}]", taskId, user.getEmail());

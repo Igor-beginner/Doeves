@@ -32,7 +32,7 @@ class TaskServiceImplIT extends IntegrationTestBase {
         var answer = taskService.fetchAllUserTasks(userId);
 
         //then
-        assertTrue(answer.isEmpty());
+        assertEquals(1, answer.size());
     }
 
     @Test
