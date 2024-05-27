@@ -29,5 +29,8 @@ cors:
 
 logging:
   level:
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    root: WARN
+    md.brainet.doeves: INFO
+
+  file:
+    name: log/doeves.log

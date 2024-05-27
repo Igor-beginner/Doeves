@@ -1,7 +1,10 @@
 package md.brainet.doeves.task;
 
 import jakarta.validation.Valid;
+import md.brainet.doeves.auth.AuthenticationService;
 import md.brainet.doeves.user.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +17,8 @@ import java.util.List;
 @RequestMapping("api/v1/task")
 public class TaskController {
 
+    private final static Logger LOG = LoggerFactory.getLogger(AuthenticationService.class);
+
     private final TaskService taskService;
 
     public TaskController(TaskService taskService) {
@@ -24,6 +29,7 @@ public class TaskController {
     @GetMapping("all")
     public ResponseEntity<?> fetchAll(@AuthenticationPrincipal User user) {
         List<Task> tasks = taskService.fetchAllUserTasks(user.getId());
+        LOG.info("Fetch all tasks request was performed and received from [{}]", user.getEmail());
         return ResponseEntity.ok(tasks);
     }
 
@@ -34,6 +40,8 @@ public class TaskController {
             @AuthenticationPrincipal User user) {
 
         int taskId = taskService.makeTask(user.getId(), newTaskRequest);
+
+        LOG.info("Make task[id={}] request was performed and received from [{}]", taskId, user.getEmail());
         return new ResponseEntity<>(
                 new TaskResponse(
                         "Task with id [%s] is created".formatted(taskId)
@@ -45,9 +53,11 @@ public class TaskController {
     @PatchMapping("{id}")
     public ResponseEntity<?> edit(
             @PathVariable("id") int id,
-            @Valid @RequestBody EditTaskRequest taskEditRequest) {
+            @Valid @RequestBody EditTaskRequest taskEditRequest,
+            @AuthenticationPrincipal User user) {
 
         taskService.editTask(id, taskEditRequest);
+        LOG.info("Edit task[id={}] request was performed and received from [{}]", id, user.getEmail());
         return ResponseEntity.ok(
                 new TaskResponse(
                         "Task with id [%s] is edited".formatted(id)
@@ -57,9 +67,12 @@ public class TaskController {
 
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("{id}")
-    public ResponseEntity<?> delete(@PathVariable("id") int taskId) {
+    public ResponseEntity<?> delete(
+            @PathVariable("id") int taskId,
+            @AuthenticationPrincipal User user) {
 
         taskService.deleteTask(taskId);
+        LOG.info("Delete task[id={}] request was performed and received from [{}]", taskId, user.getEmail());
         return ResponseEntity.ok(
                 new TaskResponse(
                         "Task with id [%s] is deleted".formatted(taskId)
@@ -71,9 +84,11 @@ public class TaskController {
     @PatchMapping("{id}/status")
     public ResponseEntity<?> changeStatus(
             @PathVariable("id") int taskId,
-            @RequestParam Boolean complete) {
+            @RequestParam Boolean complete,
+            @AuthenticationPrincipal User user) {
 
         taskService.changeStatus(taskId, complete);
+        LOG.info("Change status task[id={}] request was performed and received from [{}]", taskId, user.getEmail());
         return ResponseEntity.ok(
                 new TaskResponse(
                         "Task with id [%s] is "

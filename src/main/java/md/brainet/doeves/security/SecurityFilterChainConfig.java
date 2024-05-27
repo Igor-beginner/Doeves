@@ -59,10 +59,10 @@ public class SecurityFilterChainConfig {
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
-                )
-                .exceptionHandling(exception ->
-                        exception.authenticationEntryPoint(delegatedAuthEntryPoint)
                 );
+//                .exceptionHandling(exception ->
+//                        exception.authenticationEntryPoint(delegatedAuthEntryPoint)
+//                );
         return http.build();
     }
 }
