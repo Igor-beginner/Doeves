@@ -2,6 +2,8 @@ package md.brainet.doeves.user;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.testcontainers.shaded.org.apache.commons.io.file.NoopPathVisitor;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -11,7 +13,7 @@ class NewUserRequestMapperTest {
 
     @BeforeEach
     void setUp() {
-        mapper = new NewUserRequestMapper();
+        mapper = new NewUserRequestMapper(NoOpPasswordEncoder.getInstance());
     }
 
     @Test

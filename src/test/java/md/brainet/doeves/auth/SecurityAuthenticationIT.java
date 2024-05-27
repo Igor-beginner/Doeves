@@ -32,15 +32,18 @@ public class SecurityAuthenticationIT extends IntegrationTestBase {
         mockMvc.perform(get("/api/v1/task/all"))
                 .andExpectAll(
                         status().is(HttpStatus.FORBIDDEN.value()),
-                        content().json("""
-                            {
-                                "path" : "/api/v1/task/all",
-                                "message" : "Unauthorized request. Permission denied.",
-                                "status_code" : 403,
-                                "date" : "%s"
-                            }
-                        """)
-                        );
+                        jsonPath("$.path")
+                                .value("/api/v1/task/all"),
+
+                        jsonPath("$.message")
+                                .value("Unauthorized request. Permission denied."),
+
+                        jsonPath("$.status_code")
+                                .value(403),
+
+                        jsonPath("$.date")
+                                .exists()
+                );
     }
 
     @Test
@@ -76,14 +79,10 @@ public class SecurityAuthenticationIT extends IntegrationTestBase {
                                     """)
         ).andExpectAll(
                 status().is(HttpStatus.UNAUTHORIZED.value()),
-                content().json("""
-                    {
-                        "path" : "/api/v1/user/login",
-                        "message" : "Bad credentials",
-                        "status_code" : 401,
-                        "date" : "%s"
-                    }
-                """)
+                jsonPath("$.path").value("/api/v1/user/login"),
+                jsonPath("$.message").value("Bad credentials"),
+                jsonPath("$.status_code").value(401),
+                jsonPath("$.date").exists()
         );
     }
 }

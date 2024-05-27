@@ -28,7 +28,7 @@ class UserControllerIT extends IntegrationTestBase {
         var json = """
                 {
                     "email" : "valeratest@gmail.com",
-                    "password" : "73271737123"
+                    "password" : "dsafsdffsdaf"
                 }
                 """;
         //when
@@ -75,15 +75,17 @@ class UserControllerIT extends IntegrationTestBase {
     void makeNewUser_emailNotValid_expect400() throws Exception {
         //given
         var json = """
-                    {
-                        "email" : "testmail.ru",
-                        "password" : "73271737123"
-                    }
+                    
                 """;
         //when
         mockMvc.perform(
                 post("/api/v1/user/make")
-                        .content(json)
+                        .content("""
+                                {
+                                    "email" : "testmail.ru",
+                                    "password" : "73271737123"
+                                }
+                                """)
                         .contentType(MediaType.APPLICATION_JSON)
                 //then
         ).andExpectAll(

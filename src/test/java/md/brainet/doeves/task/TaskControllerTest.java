@@ -113,7 +113,7 @@ class TaskControllerTest {
         );
 
         //when
-        var response = taskController.edit(taskId, request);
+        var response = taskController.edit(taskId, request, USER);
 
         //then
         verify(taskService).editTask(taskId, request);
@@ -135,7 +135,7 @@ class TaskControllerTest {
         var taskId = 28391;
 
         //when
-        var response = taskController.delete(taskId);
+        var response = taskController.delete(taskId, USER);
 
         //then
         verify(taskService).deleteTask(taskId);
@@ -159,7 +159,7 @@ class TaskControllerTest {
 
         //when
         var response = taskController
-                .changeStatus(taskId, complete);
+                .changeStatus(taskId, complete, USER);
 
         //then
         verify(taskService).changeStatus(taskId, complete);
@@ -182,7 +182,7 @@ class TaskControllerTest {
 
         //when
         var response = taskController
-                .changeStatus(taskId, complete);
+                .changeStatus(taskId, complete, USER);
 
         //then
         verify(taskService).changeStatus(taskId, complete);
