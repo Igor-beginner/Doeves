@@ -48,6 +48,7 @@ public class TaskController {
         LOG.info("Make task[id={}] request was performed and received from [{}]", taskId, user.getEmail());
         return new ResponseEntity<>(
                 new TaskResponse(
+                        taskId,
                         "Task with id [%s] is created".formatted(taskId)
                 ), HttpStatus.CREATED
         );
@@ -65,6 +66,7 @@ public class TaskController {
         LOG.info("Edit task[id={}] request was performed and received from [{}]", id, user.getEmail());
         return ResponseEntity.ok(
                 new TaskResponse(
+                        id,
                         "Task with id [%s] is edited".formatted(id)
                 )
         );
@@ -81,6 +83,7 @@ public class TaskController {
         LOG.info("Delete task[id={}] request was performed and received from [{}]", taskId, user.getEmail());
         return ResponseEntity.ok(
                 new TaskResponse(
+                        taskId,
                         "Task with id [%s] is deleted".formatted(taskId)
                 )
         );
@@ -98,6 +101,7 @@ public class TaskController {
         LOG.info("Change status task[id={}] request was performed and received from [{}]", taskId, user.getEmail());
         return ResponseEntity.ok(
                 new TaskResponse(
+                        taskId,
                         "Task with id [%s] is "
                                 .concat(complete
                                         ? "finished"

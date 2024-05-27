@@ -8,6 +8,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultActions;
+import org.testcontainers.shaded.org.checkerframework.checker.units.qual.A;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -17,6 +20,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 class UserControllerIT extends IntegrationTestBase {
+
+    @Autowired
+    UserDao userDao;
 
     @Autowired
     MockMvc mockMvc;
@@ -32,14 +38,17 @@ class UserControllerIT extends IntegrationTestBase {
                 }
                 """;
         //when
-        mockMvc.perform(
+        MvcResult result =  mockMvc.perform(
                 post("/api/v1/user/make")
                         .content(json)
                         .contentType(MediaType.APPLICATION_JSON)
         //then
         ).andExpectAll(
                 status().is(HttpStatus.CREATED.value())
-        );
+        ).andReturn();
+
+        var user = userDao.selectUserById(3);
+        assertEquals("valeratest@gmail.com", user.get().getEmail());
     }
 
     @Test
@@ -72,6 +81,9 @@ class UserControllerIT extends IntegrationTestBase {
                 jsonPath("$.date")
                         .exists()
         );
+
+        var user = userDao.selectUserByEmail("test@mail.ru");
+        assertTrue(user.isPresent());
     }
 
     @Test
@@ -101,6 +113,9 @@ class UserControllerIT extends IntegrationTestBase {
                 jsonPath("$.date")
                         .exists()
         );
+
+        var user = userDao.selectUserByEmail("testmail.ru");
+        assertFalse(user.isPresent());
     }
 
     @Test
@@ -132,5 +147,8 @@ class UserControllerIT extends IntegrationTestBase {
                 jsonPath("$.date")
                         .exists()
         );
+
+        var user = userDao.selectUserByEmail("aleratest@gmail.com");
+        assertFalse(user.isPresent());
     }
 }

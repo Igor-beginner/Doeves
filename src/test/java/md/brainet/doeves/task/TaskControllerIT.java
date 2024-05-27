@@ -1,5 +1,6 @@
 package md.brainet.doeves.task;
 
+import com.jayway.jsonpath.JsonPath;
 import md.brainet.doeves.IntegrationTestBase;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +9,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -62,7 +64,7 @@ class TaskControllerIT extends IntegrationTestBase {
 
     @Test
     void makeTask_taskValid_expect201() throws Exception {
-        mockMvc.perform(post("/api/v1/task")
+        MvcResult result = mockMvc.perform(post("/api/v1/task")
                         .content("""
                         {
                             "name" : "Task1",
@@ -70,7 +72,15 @@ class TaskControllerIT extends IntegrationTestBase {
                             "deadline" : null
                         }
                     """).contentType(MediaType.APPLICATION_JSON)
-                ).andExpect(status().isCreated());
+                ).andExpect(status().isCreated())
+                .andReturn();
+
+        String jsonResponse = result.getResponse().getContentAsString();
+
+        int id = JsonPath.read(jsonResponse, "$.id");
+
+        var task = taskDao.selectById(id);
+        assertEquals("Task1", task.get().getName());
     }
 
     @Test
@@ -128,6 +138,9 @@ class TaskControllerIT extends IntegrationTestBase {
                     """.formatted(newName))
                 .contentType(MediaType.APPLICATION_JSON)
         ).andExpect(status().isForbidden());
+
+        var task = taskDao.selectById(404).get();
+        assertNotEquals(newName, task.getName());
     }
 
     @Test
@@ -141,22 +154,34 @@ class TaskControllerIT extends IntegrationTestBase {
                     """.formatted(newName))
                 .contentType(MediaType.APPLICATION_JSON)
         ).andExpect(status().isForbidden());
+
+        var task = taskDao.selectById(4042);
+        assertFalse(task.isPresent());
     }
 
     @Test
     void delete_validTask_expect200() throws Exception {
         mockMvc.perform(delete("/api/v1/task/1"))
                 .andExpect(status().isOk());
+
+        var task = taskDao.selectById(1);
+        assertFalse(task.isPresent());
     }
 
     @Test
     void delete_strangerTask_expect403() throws Exception {
         mockMvc.perform(delete("/api/v1/task/404"))
                 .andExpect(status().isForbidden());
+
+        var task = taskDao.selectById(404);
+        assertTrue(task.isPresent());
     }
 
     @Test
-    void delete_notExistTask_expect404() throws Exception {
+    void delete_notExistTask_expect403() throws Exception {
+        var task = taskDao.selectById(4053);
+        assertFalse(task.isPresent());
+
         mockMvc.perform(delete("/api/v1/task/4053"))
                 .andExpect(status().isForbidden());
     }
@@ -180,10 +205,16 @@ class TaskControllerIT extends IntegrationTestBase {
                             .param("complete", "true")
                             .contentType(MediaType.APPLICATION_JSON)
                 ).andExpect(status().isForbidden());
+
+        var task = taskDao.selectById(404);
+        assertFalse(task.get().isComplete());
     }
 
     @Test
     void changeStatus_notExistTask_expect404() throws Exception {
+        var task = taskDao.selectById(4053);
+        assertFalse(task.isPresent());
+
         mockMvc.perform(
                     patch("/api/v1/task/4053/status")
                             .param("complete", "true")
