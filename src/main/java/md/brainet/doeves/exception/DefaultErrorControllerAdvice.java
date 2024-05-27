@@ -1,6 +1,7 @@
 package md.brainet.doeves.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import md.brainet.doeves.user.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -9,6 +10,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -36,6 +38,11 @@ public class DefaultErrorControllerAdvice {
                 status.value(),
                 LocalDateTime.now()
         );
+
+        LOG.warn(
+                "Someone tried to register under existing email: {}",
+                e.getMessage()
+        );
         return new ResponseEntity<>(apiError, status);
     }
 
@@ -52,6 +59,12 @@ public class DefaultErrorControllerAdvice {
                 status.value(),
                 LocalDateTime.now()
         );
+
+        LOG.warn(
+                "Cannot find task: {}",
+                e.getMessage()
+        );
+
         return new ResponseEntity<>(apiError, status);
     }
 
@@ -67,6 +80,11 @@ public class DefaultErrorControllerAdvice {
                 e.getMessage(),
                 status.value(),
                 LocalDateTime.now()
+        );
+
+        LOG.warn(
+                "Cannot find user: {}",
+                e.getMessage()
         );
         return new ResponseEntity<>(apiError, status);
     }
@@ -90,6 +108,12 @@ public class DefaultErrorControllerAdvice {
                 status.value(),
                 LocalDateTime.now()
         );
+
+        LOG.debug(
+                "Cannot recognize data from [url='{}']: '{}'",
+                request.getRequestURI(),
+                message
+        );
         return new ResponseEntity<>(apiError, status);
     }
 
@@ -105,6 +129,9 @@ public class DefaultErrorControllerAdvice {
                 e.getMessage(),
                 status.value(),
                 LocalDateTime.now()
+        );
+        LOG.debug(
+                "Someone tried to sign in, but it turned wrong on"
         );
         return new ResponseEntity<>(apiError, status);
     }
@@ -122,17 +149,21 @@ public class DefaultErrorControllerAdvice {
                 status.value(),
                 LocalDateTime.now()
         );
+
+        LOG.warn(
+                "Unknown user tried to access protected resources [url='{}']",
+                request.getRequestURI()
+        );
         return new ResponseEntity<>(apiError, status);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiError> handleException(
             HttpServletRequest request,
-            HttpMessageNotReadableException e
+            HttpMessageNotReadableException e,
+            @AuthenticationPrincipal User user
     ) {
         HttpStatus status = HttpStatus.BAD_REQUEST;
-
-
 
         ApiError apiError = new ApiError(
                 request.getRequestURI(),
@@ -140,13 +171,19 @@ public class DefaultErrorControllerAdvice {
                 status.value(),
                 LocalDateTime.now()
         );
+        LOG.debug(
+                "User [email='{}'] sent unreadable data to[url='{}']",
+                user.getEmail(),
+                request.getRequestURI()
+        );
         return new ResponseEntity<>(apiError, status);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiError> handleException(
             HttpServletRequest request,
-            AccessDeniedException e
+            AccessDeniedException e,
+            @AuthenticationPrincipal User user
     ) {
         HttpStatus status = HttpStatus.FORBIDDEN;
 
@@ -156,13 +193,20 @@ public class DefaultErrorControllerAdvice {
                 status.value(),
                 LocalDateTime.now()
         );
+
+        LOG.warn(
+                "User [email='{}'] tried to access strange resources [url='{}']",
+                user.getEmail(),
+                request.getRequestURI()
+        );
         return new ResponseEntity<>(apiError, status);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleException(
             HttpServletRequest request,
-            Exception e
+            Exception e,
+            @AuthenticationPrincipal User user
     ) {
         HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
 
@@ -172,6 +216,10 @@ public class DefaultErrorControllerAdvice {
                 status.value(),
                 LocalDateTime.now()
         );
+
+        LOG.error("Occuered an unknown exception [email=%s] -> [uri=%s]"
+                        .formatted(user.getEmail(), request.getRequestURI())
+                , e);
         return new ResponseEntity<>(apiError, status);
     }
 }
