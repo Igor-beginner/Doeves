@@ -1,0 +1,31 @@
+services:
+  db:
+    container_name: postgres
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /data/postgres
+    volumes:
+      - db:/data/postgres
+    networks:
+      - db
+    restart: unless-stopped
+  backend:
+    container_name: doeves-backend
+    image: lovespringmvc/doeves-backend
+    environment:
+      DB_HOST: postgres
+    ports:
+      - "8080:8080"
+    networks:
+      - db
+    depends_on:
+      - db
+    restart: unless-stopped
+networks:
+  db:
+    driver: bridge
+
+volumes:
+  db:
