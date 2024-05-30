@@ -40,7 +40,8 @@ public class DefaultErrorControllerAdvice {
         );
 
         LOG.warn(
-                "Someone tried to register under existing email: {}",
+                "Someone[ip={}] tried to register under existing email: {}",
+                request.getRemoteAddr(),
                 e.getMessage()
         );
         return new ResponseEntity<>(apiError, status);
@@ -131,7 +132,8 @@ public class DefaultErrorControllerAdvice {
                 LocalDateTime.now()
         );
         LOG.debug(
-                "Someone tried to sign in, but it turned wrong on"
+                "Someone[ip={}] tried to sign in, but it turned wrong on",
+                request.getRemoteAddr()
         );
         return new ResponseEntity<>(apiError, status);
     }
@@ -151,7 +153,8 @@ public class DefaultErrorControllerAdvice {
         );
 
         LOG.warn(
-                "Unknown user tried to access protected resources [url='{}']",
+                "Unknown user[ip={}] tried to access protected resources [url='{}']",
+                request.getRemoteAddr(),
                 request.getRequestURI()
         );
         return new ResponseEntity<>(apiError, status);
@@ -217,8 +220,8 @@ public class DefaultErrorControllerAdvice {
                 LocalDateTime.now()
         );
 
-        LOG.error("Occuered an unknown exception [email=%s] -> [uri=%s]"
-                        .formatted(user.getEmail(), request.getRequestURI())
+        LOG.error("Occuered an unknown exception  -> [uri=%s]"
+                        .formatted(request.getRequestURI())
                 , e);
         return new ResponseEntity<>(apiError, status);
     }
