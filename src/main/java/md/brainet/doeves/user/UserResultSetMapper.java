@@ -25,6 +25,8 @@ public class UserResultSetMapper implements ResultSetExtractor<User> {
             user.setPassword(rs.getString("password"));
             user.setEnabled(rs.getBoolean("is_enabled"));
             user.setRole(Role.valueOf(rs.getString("role_name")));
+            user.setVerified(rs.getBoolean("verified"));
+            user.setVerificationDetailsId(rs.getInt("verification_details_id"));
         }
 
         return user;

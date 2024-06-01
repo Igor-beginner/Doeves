@@ -205,6 +205,28 @@ public class DefaultErrorControllerAdvice {
         return new ResponseEntity<>(apiError, status);
     }
 
+    @ExceptionHandler(VerificationBadCodeException.class)
+    public ResponseEntity<ApiError> handleException(
+            HttpServletRequest request,
+            VerificationBadCodeException e
+    ) {
+        HttpStatus status = HttpStatus.EXPECTATION_FAILED;
+
+        ApiError apiError = new ApiError(
+                request.getRequestURI(),
+                e.getMessage(),
+                status.value(),
+                LocalDateTime.now()
+        );
+
+        LOG.warn(
+                "Invalid code [code={}] for email [email={}]",
+                e.getCode(),
+                e.getEmail()
+                );
+        return new ResponseEntity<>(apiError, status);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleException(
             HttpServletRequest request,

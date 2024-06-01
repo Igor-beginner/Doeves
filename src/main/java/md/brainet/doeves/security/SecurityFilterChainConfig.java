@@ -45,7 +45,9 @@ public class SecurityFilterChainConfig {
                     request.requestMatchers(
                             HttpMethod.POST,
                             "/api/v1/user/login",
-                            "/api/v1/user/make"
+                            "/api/v1/user",
+                            "/api/v1/user/verification",
+                            "/api/v1/user/verification/new"
                     )
                             .permitAll()
                             .anyRequest()

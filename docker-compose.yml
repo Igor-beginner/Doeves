@@ -18,6 +18,8 @@ services:
       DB_HOST: postgres
     ports:
       - "8080:8080"
+    volumes:
+      - logs:/app/log
     networks:
       - db
     depends_on:
@@ -29,3 +31,4 @@ networks:
 
 volumes:
   db:
+  logs:

@@ -1,5 +1,12 @@
-
 spring:
+  mail:
+    host: smtp.gmail.com
+    username: lovespringmvc@gmail.com
+    password: pqcn iidx dwsw ohin
+    port: 465
+
+    protocol: smtp
+    debug: true
   datasource:
     url: jdbc:postgresql://${DB_HOST}:5432/postgres
     username: ${DB_NAME}

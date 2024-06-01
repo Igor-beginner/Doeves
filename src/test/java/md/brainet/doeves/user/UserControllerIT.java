@@ -39,7 +39,7 @@ class UserControllerIT extends IntegrationTestBase {
                 """;
         //when
         MvcResult result =  mockMvc.perform(
-                post("/api/v1/user/make")
+                post("/api/v1/user")
                         .content(json)
                         .contentType(MediaType.APPLICATION_JSON)
         //then
@@ -63,16 +63,16 @@ class UserControllerIT extends IntegrationTestBase {
                 """;
         //when
         mockMvc.perform(
-                post("/api/v1/user/make")
+                post("/api/v1/user")
                         .content(json)
                         .contentType(MediaType.APPLICATION_JSON)
                 //then
         ).andExpectAll(
                 status().is(HttpStatus.CONFLICT.value()),
                 jsonPath("$.path")
-                        .value("/api/v1/user/make"),
+                        .value("/api/v1/user"),
 
-                jsonPath("$.message")
+                jsonPath("$.content")
                         .value("Email [test@mail.ru] already exists."),
 
                 jsonPath("$.status_code")
@@ -90,7 +90,7 @@ class UserControllerIT extends IntegrationTestBase {
     void makeNewUser_emailNotValid_expect400() throws Exception {
         //when
         mockMvc.perform(
-                post("/api/v1/user/make")
+                post("/api/v1/user")
                         .content("""
                                 {
                                     "email" : "testmail.ru",
@@ -102,9 +102,9 @@ class UserControllerIT extends IntegrationTestBase {
         ).andExpectAll(
                 status().isBadRequest(),
                 jsonPath("$.path")
-                        .value("/api/v1/user/make"),
+                        .value("/api/v1/user"),
 
-                jsonPath("$.message")
+                jsonPath("$.content")
                         .value("Email [testmail.ru] isn't valid."),
 
                 jsonPath("$.status_code")
@@ -129,16 +129,16 @@ class UserControllerIT extends IntegrationTestBase {
                 """;
         //when
         mockMvc.perform(
-                post("/api/v1/user/make")
+                post("/api/v1/user")
                         .content(json)
                         .contentType(MediaType.APPLICATION_JSON)
                 //then
         ).andExpectAll(
                 status().is(HttpStatus.BAD_REQUEST.value()),
                 jsonPath("$.path")
-                        .value("/api/v1/user/make"),
+                        .value("/api/v1/user"),
 
-                jsonPath("$.message")
+                jsonPath("$.content")
                         .value("Password is not valid!"),
 
                 jsonPath("$.status_code")

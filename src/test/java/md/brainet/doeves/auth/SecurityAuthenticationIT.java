@@ -35,7 +35,7 @@ public class SecurityAuthenticationIT extends IntegrationTestBase {
                         jsonPath("$.path")
                                 .value("/api/v1/task/all"),
 
-                        jsonPath("$.message")
+                        jsonPath("$.content")
                                 .value("Unauthorized request. Permission denied."),
 
                         jsonPath("$.status_code")
@@ -80,7 +80,7 @@ public class SecurityAuthenticationIT extends IntegrationTestBase {
         ).andExpectAll(
                 status().is(HttpStatus.UNAUTHORIZED.value()),
                 jsonPath("$.path").value("/api/v1/user/login"),
-                jsonPath("$.message").value("Bad credentials"),
+                jsonPath("$.content").value("Bad credentials"),
                 jsonPath("$.status_code").value(401),
                 jsonPath("$.date").exists()
         );

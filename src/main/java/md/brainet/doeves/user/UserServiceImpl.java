@@ -1,6 +1,7 @@
 package md.brainet.doeves.user;
 
 import md.brainet.doeves.exception.EmailAlreadyExistsDaoException;
+import md.brainet.doeves.verification.VerificationService;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
@@ -11,19 +12,27 @@ public class UserServiceImpl implements UserService {
 
     private final UserDao userDao;
     private final NewUserRequestMapper requestMapper;
+    private final VerificationService verificationService;
 
     public UserServiceImpl(UserDao userDao,
-                           NewUserRequestMapper requestMapper) {
+                           NewUserRequestMapper requestMapper,
+                           VerificationService verificationService) {
         this.userDao = userDao;
         this.requestMapper = requestMapper;
+        this.verificationService = verificationService;
     }
 
     @Override
     public Integer makeUser(NewUserRequest request) {
+
         try {
-            return userDao.insertUserAndDefaultRole(
-                            requestMapper.apply(request)
-                    );
+            User user = requestMapper.apply(request);
+            Integer verificationDetailsId =
+                    verificationService
+                            .generateVerificationDetailsFor(request.email());
+            user.setVerificationDetailsId(verificationDetailsId);
+            Integer id = userDao.insertUserAndDefaultRole(user);
+            return id;
         } catch (DuplicateKeyException e) {
             throw new EmailAlreadyExistsDaoException(
                     "Email [%s] already exists."

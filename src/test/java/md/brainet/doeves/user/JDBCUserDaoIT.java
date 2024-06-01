@@ -81,6 +81,7 @@ class JDBCUserDaoIT extends IntegrationTestBase {
         var user = new User();
         user.setEmail("valera777@gmail.com");
         user.setPassword("23123123");
+        user.setVerificationDetailsId(3);
 
         //when
         Integer actualId = jdbcUserDao.insertUserAndDefaultRole(user);
@@ -95,6 +96,7 @@ class JDBCUserDaoIT extends IntegrationTestBase {
         var user = new User();
         user.setEmail("test@mail.ru");
         user.setPassword("23123123");
+        user.setVerificationDetailsId(3);
 
         //when
         Executable performing = () -> jdbcUserDao.insertUserAndDefaultRole(user);

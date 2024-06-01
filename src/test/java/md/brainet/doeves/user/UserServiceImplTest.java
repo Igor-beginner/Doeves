@@ -1,6 +1,7 @@
 package md.brainet.doeves.user;
 
 import md.brainet.doeves.exception.EmailAlreadyExistsDaoException;
+import md.brainet.doeves.verification.VerificationService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
@@ -25,6 +26,9 @@ class UserServiceImplTest {
 
     @Mock
     NewUserRequestMapper mapper;
+
+    @Mock
+    VerificationService verificationService;
 
     @InjectMocks
     UserServiceImpl userService;

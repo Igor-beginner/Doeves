@@ -26,6 +26,8 @@ public class JDBCUserDao implements UserDao {
                 u.email,
                 u.is_enabled,
                 u.password,
+                u.verified,
+                u.verification_details_id,
                 r.name as role_name
             FROM users u
             LEFT JOIN role r
@@ -63,9 +65,10 @@ public class JDBCUserDao implements UserDao {
         var sql = """
                 INSERT INTO users (
                     email,
-                    password
+                    password,
+                    verification_details_id
                 )
-                VALUES (?, ?);
+                VALUES (?, ?, ?);
                 """;
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -79,6 +82,7 @@ public class JDBCUserDao implements UserDao {
 
             preparedStatement.setString(1, user.getEmail());
             preparedStatement.setString(2, user.getPassword());
+            preparedStatement.setInt(3, user.getVerificationDetailsId());
 
             return preparedStatement;
         }, keyHolder);
@@ -118,6 +122,17 @@ public class JDBCUserDao implements UserDao {
                 """;
 
         return jdbcTemplate.update(sql, role.name(), userId) > 0;
+    }
+
+    @Override
+    public boolean verifyUserByEmail(String email) {
+        var sql = """
+                UPDATE users
+                SET verified = true
+                WHERE email = ?;
+                """;
+
+        return jdbcTemplate.update(sql, email) > 0;
     }
 
     private Optional<User> selectUserByCriteria(

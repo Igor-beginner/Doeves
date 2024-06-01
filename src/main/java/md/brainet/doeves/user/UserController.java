@@ -20,7 +20,7 @@ public class UserController {
     }
 
     @ResponseStatus(HttpStatus.CREATED)
-    @PostMapping("make")
+    @PostMapping
     public ResponseEntity<NewUserResponse> makeNewUser(
             @RequestBody @Valid NewUserRequest userDTO) {
 

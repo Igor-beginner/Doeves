@@ -13,6 +13,8 @@ public class User implements UserDetails {
     private String email;
     private String password;
     private boolean enabled;
+    private boolean verified;
+    private Integer verificationDetailsId;
     private Role role;
 
     public Integer getId() {
@@ -49,6 +51,22 @@ public class User implements UserDetails {
 
     public void setRole(Role role) {
         this.role = role;
+    }
+
+    public boolean isVerified() {
+        return verified;
+    }
+
+    public void setVerified(boolean verified) {
+        this.verified = verified;
+    }
+
+    public Integer getVerificationDetailsId() {
+        return verificationDetailsId;
+    }
+
+    public void setVerificationDetailsId(Integer verificationDetailsId) {
+        this.verificationDetailsId = verificationDetailsId;
     }
 
     @Override

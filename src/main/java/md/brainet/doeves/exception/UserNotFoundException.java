@@ -11,6 +11,10 @@ public class UserNotFoundException extends NoSuchElementException {
         this(userId, null);
     }
 
+    public UserNotFoundException(String email) {
+        super("User not found [email=%s]".formatted(email));
+    }
+
     public UserNotFoundException(Integer userId, Throwable throwable) {
         super(
                 "User with id [%s] doesn't exist".formatted(userId),

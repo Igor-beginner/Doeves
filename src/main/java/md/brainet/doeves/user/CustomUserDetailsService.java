@@ -1,5 +1,6 @@
 package md.brainet.doeves.user;
 
+import md.brainet.doeves.exception.VerificationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -16,10 +17,16 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return userDao.selectUserByEmail(username)
+        User user = userDao.selectUserByEmail(username)
                 .orElseThrow(() -> new UsernameNotFoundException(
                                 "Email '%s' doesn't exist".formatted(username)
                         )
                 );
+
+        if(!user.isVerified()) {
+            throw new VerificationException(username);
+        }
+
+        return user;
     }
 }
