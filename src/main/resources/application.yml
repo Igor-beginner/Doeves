@@ -1,9 +1,9 @@
 spring:
   mail:
-    host: smtp.gmail.com
-    username: lovespringmvc@gmail.com
-    password: pqcn iidx dwsw ohin
-    port: 465
+    host: ${spring.mail.host}
+    username: ${spring.mail.username}
+    password: ${spring.mail.password}
+    port: ${spring.mail.port}
 
     protocol: smtp
     debug: true
@@ -41,3 +41,10 @@ logging:
 
   file:
     name: log/doeves.log
+
+verification:
+  uris: "/api/v1/user/verification,/api/v1/user/verification/new"
+
+jwt:
+  secret:
+    key: ${jwt.secret.key}

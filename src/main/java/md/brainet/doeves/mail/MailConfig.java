@@ -1,5 +1,6 @@
 package md.brainet.doeves.mail;
 
+import md.brainet.doeves.util.SpringActiveProfiles;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,7 +11,6 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 import java.util.Properties;
 
 @Configuration
-@Profile({"dev", "prod"})
 public class MailConfig {
 
     @Value("${spring.mail.host}")
@@ -49,7 +49,8 @@ public class MailConfig {
     }
 
     @Bean
-    public MailService mailService(JavaMailSender javaMailSender) {
-        return new MailServiceImpl(javaMailSender);
+    public MailService mailService(JavaMailSender javaMailSender,
+                                   SpringActiveProfiles profiles) {
+        return new MailServiceImpl(javaMailSender, profiles);
     }
 }

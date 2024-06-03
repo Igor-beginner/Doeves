@@ -6,6 +6,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import md.brainet.doeves.auth.AuthenticationService;
+import md.brainet.doeves.exception.InvalidTokenException;
 import md.brainet.doeves.user.User;
 import md.brainet.doeves.user.UserDao;
 import org.slf4j.Logger;
@@ -25,7 +26,9 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @Component
-public class JWTAuthenticationFilter extends OncePerRequestFilter {
+public class JWTAuthenticationFilter extends OncePerRequestFilter implements TokenAuthorizationHeaderPrefix {
+
+    private static final String AUTHORIZATION_PREFIX = "pidr pizda token elda chlen ";
 
     private final JWTUtil jwtUtil;
     private final UserDetailsService userDetailsService;
@@ -45,12 +48,14 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
 
         String authHeader = request.getHeader("Authorization");
 
-        if (authHeader == null || !authHeader.startsWith("pidr pizda token elda chlen ")) {
-            filterChain.doFilter(request, response);
+        String jwt;
+        try {
+             jwt = cleanFor(authHeader);
+        } catch (InvalidTokenException e) {
+            doFilter(request, response, filterChain);
             return;
         }
 
-        String jwt = authHeader.substring(28);
         String subject = jwtUtil.getSubject(jwt);
 
         if (subject != null &&
@@ -69,5 +74,13 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
         }
         filterChain.doFilter(request, response);
 
+    }
+
+    @Override
+    public String cleanFor(String token) {
+        if (token == null || !token.startsWith(AUTHORIZATION_PREFIX)) {
+            //throw new InvalidTokenException("Token is not valid");
+        }
+        return token.substring(AUTHORIZATION_PREFIX.length());
     }
 }

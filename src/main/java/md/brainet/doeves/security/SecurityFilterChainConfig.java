@@ -2,7 +2,7 @@ package md.brainet.doeves.security;
 
 import md.brainet.doeves.exception.DelegatedAuthEntryPoint;
 import md.brainet.doeves.jwt.JWTAuthenticationFilter;
-import org.springframework.beans.factory.annotation.Qualifier;
+import md.brainet.doeves.verification.VerificationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -12,10 +12,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.DelegatingAuthenticationEntryPoint;
-import org.springframework.security.web.authentication.Http403ForbiddenEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
@@ -24,16 +21,19 @@ public class SecurityFilterChainConfig {
 
     private final AuthenticationProvider authenticationProvider;
     private final JWTAuthenticationFilter jwtAuthenticationFilter;
+    private final VerificationFilter verificationFilter;
     private final DelegatedAuthEntryPoint delegatedAuthEntryPoint;
 
     public SecurityFilterChainConfig(
             AuthenticationProvider authenticationProvider,
             JWTAuthenticationFilter jwtAuthenticationFilter,
-            DelegatedAuthEntryPoint delegatedAuthEntryPoint) {
+            DelegatedAuthEntryPoint delegatedAuthEntryPoint,
+            VerificationFilter verificationFilter) {
 
         this.authenticationProvider = authenticationProvider;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.delegatedAuthEntryPoint = delegatedAuthEntryPoint;
+        this.verificationFilter = verificationFilter;
     }
 
     @Bean
@@ -45,9 +45,7 @@ public class SecurityFilterChainConfig {
                     request.requestMatchers(
                             HttpMethod.POST,
                             "/api/v1/user/login",
-                            "/api/v1/user",
-                            "/api/v1/user/verification",
-                            "/api/v1/user/verification/new"
+                            "/api/v1/user"
                     )
                             .permitAll()
                             .anyRequest()
@@ -62,6 +60,7 @@ public class SecurityFilterChainConfig {
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
                 )
+                .addFilterBefore(verificationFilter, JWTAuthenticationFilter.class)
                 .exceptionHandling(exception ->
                         exception.authenticationEntryPoint(delegatedAuthEntryPoint)
                 );

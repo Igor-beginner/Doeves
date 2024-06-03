@@ -23,10 +23,6 @@ public class CustomUserDetailsService implements UserDetailsService {
                         )
                 );
 
-        if(!user.isVerified()) {
-            throw new VerificationException(username);
-        }
-
         return user;
     }
 }

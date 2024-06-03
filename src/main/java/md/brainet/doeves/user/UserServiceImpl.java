@@ -26,6 +26,11 @@ public class UserServiceImpl implements UserService {
     public Integer makeUser(NewUserRequest request) {
 
         try {
+
+            //TODO user must not receive verification code if already exists
+            // method insertUserAndDefaultRole(user) must invoked earlier
+
+            //TODO make method for sending email as asynch
             User user = requestMapper.apply(request);
             Integer verificationDetailsId =
                     verificationService
