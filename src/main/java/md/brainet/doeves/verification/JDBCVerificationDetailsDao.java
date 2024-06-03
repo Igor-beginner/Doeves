@@ -64,11 +64,6 @@ public class JDBCVerificationDetailsDao implements VerificationDetailsDao {
     }
 
     @Override
-    public Optional<String> selectVerificationCodeByEmail(String email) {
-        return Optional.empty();
-    }
-
-    @Override
     public Integer insertVerificationDetails(VerificationDetails details) {
         var sql = """
                 INSERT INTO verification_details (

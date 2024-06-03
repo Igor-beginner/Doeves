@@ -65,10 +65,9 @@ public class JDBCUserDao implements UserDao {
         var sql = """
                 INSERT INTO users (
                     email,
-                    password,
-                    verification_details_id
+                    password
                 )
-                VALUES (?, ?, ?);
+                VALUES (?, ?);
                 """;
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -82,7 +81,6 @@ public class JDBCUserDao implements UserDao {
 
             preparedStatement.setString(1, user.getEmail());
             preparedStatement.setString(2, user.getPassword());
-            preparedStatement.setInt(3, user.getVerificationDetailsId());
 
             return preparedStatement;
         }, keyHolder);

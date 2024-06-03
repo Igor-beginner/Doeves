@@ -79,7 +79,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter implements Tok
     @Override
     public String cleanFor(String token) {
         if (token == null || !token.startsWith(AUTHORIZATION_PREFIX)) {
-            //throw new InvalidTokenException("Token is not valid");
+            throw new InvalidTokenException("Token is not valid");
         }
         return token.substring(AUTHORIZATION_PREFIX.length());
     }

@@ -12,32 +12,20 @@ public class UserServiceImpl implements UserService {
 
     private final UserDao userDao;
     private final NewUserRequestMapper requestMapper;
-    private final VerificationService verificationService;
 
     public UserServiceImpl(UserDao userDao,
-                           NewUserRequestMapper requestMapper,
-                           VerificationService verificationService) {
+                           NewUserRequestMapper requestMapper) {
         this.userDao = userDao;
         this.requestMapper = requestMapper;
-        this.verificationService = verificationService;
     }
 
     @Override
     public Integer makeUser(NewUserRequest request) {
 
         try {
-
-            //TODO user must not receive verification code if already exists
-            // method insertUserAndDefaultRole(user) must invoked earlier
-
-            //TODO make method for sending email as asynch
-            User user = requestMapper.apply(request);
-            Integer verificationDetailsId =
-                    verificationService
-                            .generateVerificationDetailsFor(request.email());
-            user.setVerificationDetailsId(verificationDetailsId);
-            Integer id = userDao.insertUserAndDefaultRole(user);
-            return id;
+            return userDao.insertUserAndDefaultRole(
+                    requestMapper.apply(request)
+            );
         } catch (DuplicateKeyException e) {
             throw new EmailAlreadyExistsDaoException(
                     "Email [%s] already exists."

@@ -14,3 +14,10 @@ logging:
         datasource:
           DataSourceUtils: DEBUG
         support: DEBUG
+
+verification:
+  uris: "/api/v1/user/verification,/api/v1/user/verification/new"
+
+jwt:
+  secret:
+    key: "test"
