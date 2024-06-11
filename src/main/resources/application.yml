@@ -1,4 +1,8 @@
 spring:
+  devtools:
+    restart:
+      enabled: true
+      additional-paths: src/main/java
   mail:
     host: ${spring.mail.host}
     username: ${spring.mail.username}
@@ -37,7 +41,7 @@ cors:
 logging:
   level:
     root: WARN
-    md.brainet.doeves: INFO
+    md.brainet.doeves: DEBUG
 
   file:
     name: log/doeves.log

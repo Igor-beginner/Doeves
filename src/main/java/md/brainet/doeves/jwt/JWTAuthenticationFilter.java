@@ -28,7 +28,7 @@ import java.util.Optional;
 @Component
 public class JWTAuthenticationFilter extends OncePerRequestFilter implements TokenAuthorizationHeaderPrefix {
 
-    private static final String AUTHORIZATION_PREFIX = "pidr pizda token elda chlen ";
+    public static final String AUTHORIZATION_PREFIX = "pidr pizda token elda chlen ";
 
     private final JWTUtil jwtUtil;
     private final UserDetailsService userDetailsService;
@@ -47,7 +47,6 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter implements Tok
             throws ServletException, IOException {
 
         String authHeader = request.getHeader("Authorization");
-
         String jwt;
         try {
              jwt = cleanFor(authHeader);

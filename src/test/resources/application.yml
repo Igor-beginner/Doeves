@@ -20,4 +20,4 @@ verification:
 
 jwt:
   secret:
-    key: "test"
+    key: "testdsfasfdasdfasdfasdfsadfasdfasdfsadfasdfasdfasdfsadsdaasdfsdafsaasdfasdfasdf"
