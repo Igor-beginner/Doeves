@@ -1,8 +1,10 @@
-package md.brainet.doeves.user;
+package md.brainet.doeves.verification;
 
 import com.jayway.jsonpath.JsonPath;
 import md.brainet.doeves.IntegrationTestBase;
 import md.brainet.doeves.jwt.JWTAuthenticationFilter;
+import md.brainet.doeves.user.User;
+import md.brainet.doeves.user.UserDao;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;

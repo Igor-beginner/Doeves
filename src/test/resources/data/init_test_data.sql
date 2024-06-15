@@ -17,6 +17,9 @@ VALUES (1, 'test@mail.ru', '123456', true, 1);
 INSERT INTO users (id, email, password, role_id, verified, verification_details_id)
 VALUES (2, 'testadmin@gmail.com', 'admin', 2, true, 2);
 
+INSERT INTO users (id, email, password, role_id, verified, verification_details_id)
+VALUES (3, 'unverified@mail.ru', 'verification', 1, false, NULL);
+
 SELECT SETVAL('users_id_seq', (SELECT MAX(id) FROM users));
 
 INSERT INTO task(
