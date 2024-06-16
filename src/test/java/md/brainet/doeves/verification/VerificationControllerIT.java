@@ -1,6 +1,7 @@
 package md.brainet.doeves.verification;
 
 import md.brainet.doeves.IntegrationTestBase;
+import md.brainet.doeves.jwt.JWTAuthenticationFilter;
 import md.brainet.doeves.user.UserDao;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,8 +13,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
 import java.time.LocalDateTime;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -35,12 +34,16 @@ class VerificationControllerIT extends IntegrationTestBase {
     @Autowired
     VerificationDetailsDao verificationDetailsDao;
 
+    @Autowired
+    VerificationService verificationService;
+
     @Test
-    void tryToVerify_receivedCodeIsCorrect_expect200() throws Exception {
+    void tryToVerify_receivedCodeIsCorrect_expect202() throws Exception {
+        verificationService.generateNewCodeFor(UNVERIFIED_EMAIL);
         var details = fetchVerificationDetails(UNVERIFIED_EMAIL);
 
         tryToVerify(details)
-                .andExpect(status().isOk());
+                .andExpect(status().isAccepted());
 
         var user = userDao.selectUserByEmail(details.jwt().email());
         assertTrue(user.isPresent());
@@ -48,11 +51,29 @@ class VerificationControllerIT extends IntegrationTestBase {
     }
 
     @Test
-    void thereAreAttemptsToVerify_receivedCodeIsNotCorrect_expect400BadCodeAndAttemptsDecrement() throws Exception {
+    void thereAreAttemptsToVerify_receivedCodeIsNotCorrect_expectIsExpectationFailed() throws Exception {
+        var verificationDetails = VerificationDetailsFactory
+                .build(new SixDigitsCodeGenerator());
+
+        Integer id = verificationDetailsDao.insertVerificationDetails(verificationDetails);
+        verificationDetailsDao.updateVerificationDetails(UNVERIFIED_EMAIL, id);
+
         var details = fetchVerificationDetails(UNVERIFIED_EMAIL);
 
         tryToVerify(details.jwt, "231233")
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isExpectationFailed());
+
+        var user = userDao.selectUserByEmail(details.jwt().email());
+        assertTrue(user.isPresent());
+        assertFalse(user.get().isVerified());
+    }
+
+    @Test
+    void thereAreAttemptsToVerify_receivedCodeIsNotPresent_expectIsExpectationFailed() throws Exception {
+        var details = fetchVerificationDetails(UNVERIFIED_EMAIL);
+
+        tryToVerify(details.jwt, "231233")
+                .andExpect(status().isExpectationFailed());
 
         var user = userDao.selectUserByEmail(details.jwt().email());
         assertTrue(user.isPresent());
@@ -61,11 +82,11 @@ class VerificationControllerIT extends IntegrationTestBase {
 
     @Test
     void thereAreNotAttemptsToVerify_receivedCodeIsCorrect_expect410() throws Exception {
+        verificationService.generateNewCodeFor(UNVERIFIED_EMAIL);
         var details = fetchVerificationDetails(UNVERIFIED_EMAIL);
-
         for(int i = 0; i < 5; i++) {
             tryToVerify(details.jwt, "111111")
-                    .andExpect(status().isBadRequest());
+                    .andExpect(status().isExpectationFailed());
         }
 
         tryToVerify(details)
@@ -86,7 +107,9 @@ class VerificationControllerIT extends IntegrationTestBase {
 
         expiredDetails.setExpireDate(LocalDateTime.now().minusDays(12));
 
-        verificationDetailsDao.updateVerificationDetails(email, expiredDetails);
+        Integer id = verificationDetailsDao.insertVerificationDetails(expiredDetails);
+
+        verificationDetailsDao.updateVerificationDetails(email, id);
 
         var details = fetchVerificationDetails(email);
 
@@ -127,13 +150,16 @@ class VerificationControllerIT extends IntegrationTestBase {
     void sendNewVerificationCode_userNotVerified_expect200() throws Exception {
         final String email = UNVERIFIED_EMAIL;
 
-        String oldCode = requestCode(email);
+        var oldCode = verificationDetailsDao
+                .selectVerificationDetailsByEmail(email);
 
         generateNewVerificationCode(email)
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isOk());
 
-        String newCode = requestCode(email);
-        assertNotEquals(oldCode, newCode);
+        var newCode = verificationDetailsDao
+                .selectVerificationDetailsByEmail(email);
+        assertFalse(oldCode.isPresent());
+        assertTrue(newCode.isPresent());
     }
 
 
@@ -142,7 +168,7 @@ class VerificationControllerIT extends IntegrationTestBase {
         try {
             return mockMvc.perform(
                     post("/api/v1/user/verification/new")
-                            .header(HttpHeaders.AUTHORIZATION, details.jwt)
+                            .header(HttpHeaders.AUTHORIZATION, JWTAuthenticationFilter.AUTHORIZATION_PREFIX.concat(details.jwt.value))
             );
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -164,7 +190,7 @@ class VerificationControllerIT extends IntegrationTestBase {
         try {
             return mockMvc.perform(
                     post("/api/v1/user/verification?code=%s".formatted(code))
-                            .header(HttpHeaders.AUTHORIZATION, jwt.value())
+                            .header(HttpHeaders.AUTHORIZATION, JWTAuthenticationFilter.AUTHORIZATION_PREFIX.concat(jwt.value()))
             );
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -192,7 +218,7 @@ class VerificationControllerIT extends IntegrationTestBase {
             var details = verificationDetailsDao
                     .selectVerificationDetailsByEmail(email);
             var jwt = new Jwt(token, email);
-            return new TestVerificationDetails(details.get().getCode(), jwt);
+            return new TestVerificationDetails(details.map(VerificationDetails::getCode).orElse(null), jwt);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

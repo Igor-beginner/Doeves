@@ -37,12 +37,11 @@ public class VerificationServiceImpl implements VerificationService {
     }
 
     @Override
-    @Transactional(isolation = Isolation.REPEATABLE_READ)
+    @Transactional(
+            isolation = Isolation.REPEATABLE_READ,
+            noRollbackFor = VerificationBadCodeException.class
+    )
     public void verify(String email, String code) {
-
-        VerificationDetails details =
-                verificationDao.selectVerificationDetailsByEmail(email)
-                        .orElseThrow(VerificationCodeIsEmptyException::new);
 
         if(verificationDao.isUserVerified(email)) {
             throw new VerificationException(
@@ -50,8 +49,13 @@ public class VerificationServiceImpl implements VerificationService {
             );
         }
 
+        VerificationDetails details =
+                verificationDao.decrementVerificationDetailsAttemptByEmail(email)
+                        .orElseThrow(VerificationCodeIsEmptyException::new);
+
+
         if (LocalDateTime.now().isAfter(details.getExpireDate())
-                || details.getMissingAttempts() <= 0) {
+                || details.getMissingAttempts() < 0) {
             throw new VerificationCodeExpiredException(email, code);
         } else if (!details.getCode().equals(code)) {
             throw new VerificationBadCodeException(email, code);

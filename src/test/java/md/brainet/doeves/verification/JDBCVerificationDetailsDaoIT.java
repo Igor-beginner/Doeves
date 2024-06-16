@@ -27,7 +27,7 @@ class JDBCVerificationDetailsDaoIT extends IntegrationTestBase {
 
         //when
         Optional<VerificationDetails> result = verificationDao
-                .selectVerificationDetailsByEmail(email);
+                .decrementVerificationDetailsAttemptByEmail(email);
 
         //then
         assertTrue(result.isPresent());
@@ -46,7 +46,7 @@ class JDBCVerificationDetailsDaoIT extends IntegrationTestBase {
 
         //when
         Optional<VerificationDetails> result = verificationDao
-                .selectVerificationDetailsByEmail(email);
+                .decrementVerificationDetailsAttemptByEmail(email);
 
         //then
         assertFalse(result.isPresent());
@@ -59,7 +59,7 @@ class JDBCVerificationDetailsDaoIT extends IntegrationTestBase {
 
         //when
         Optional<VerificationDetails> result = verificationDao
-                .selectVerificationDetailsByEmail(email);
+                .decrementVerificationDetailsAttemptByEmail(email);
 
         //then
         assertFalse(result.isPresent());
@@ -112,7 +112,7 @@ class JDBCVerificationDetailsDaoIT extends IntegrationTestBase {
 
         //then
         Optional<VerificationDetails> detailsResult =
-                verificationDao.selectVerificationDetailsByEmail(email);
+                verificationDao.decrementVerificationDetailsAttemptByEmail(email);
 
         assertTrue(detailsResult.isPresent());
         assertEquals(verificationId, detailsResult.get().getId());

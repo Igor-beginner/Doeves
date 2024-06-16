@@ -227,6 +227,66 @@ public class DefaultErrorControllerAdvice {
         return new ResponseEntity<>(apiError, status);
     }
 
+    @ExceptionHandler(VerificationCodeExpiredException.class)
+    public ResponseEntity<ApiError> handleException(
+            HttpServletRequest request,
+            VerificationCodeExpiredException e,
+            @AuthenticationPrincipal User user
+    ) {
+        HttpStatus status = HttpStatus.GONE;
+
+        ApiError apiError = new ApiError(
+                request.getRequestURI(),
+                e.getMessage(),
+                status.value(),
+                LocalDateTime.now()
+        );
+
+        LOG.warn("User [email={}] get out of attempt verification code limit"
+                , user.getEmail());
+        return new ResponseEntity<>(apiError, status);
+    }
+
+    @ExceptionHandler(VerificationException.class)
+    public ResponseEntity<ApiError> handleException(
+            HttpServletRequest request,
+            VerificationException e,
+            @AuthenticationPrincipal User user
+    ) {
+        HttpStatus status = HttpStatus.UNAUTHORIZED;
+
+        ApiError apiError = new ApiError(
+                request.getRequestURI(),
+                e.getMessage(),
+                status.value(),
+                LocalDateTime.now()
+        );
+
+        LOG.warn("User [email={}] tried to access protected resources being as unverified"
+                , user.getEmail());
+        return new ResponseEntity<>(apiError, status);
+    }
+
+    @ExceptionHandler(VerificationCodeIsEmptyException.class)
+    public ResponseEntity<ApiError> handleException(
+            HttpServletRequest request,
+            VerificationCodeIsEmptyException e,
+            @AuthenticationPrincipal User user
+    ) {
+        HttpStatus status = HttpStatus.EXPECTATION_FAILED;
+
+        ApiError apiError = new ApiError(
+                request.getRequestURI(),
+                e.getMessage(),
+                status.value(),
+                LocalDateTime.now()
+        );
+
+        LOG.warn("User [email={}] tried to verify, but verification details is not created yet"
+                , user.getEmail());
+        return new ResponseEntity<>(apiError, status);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleException(
             HttpServletRequest request,

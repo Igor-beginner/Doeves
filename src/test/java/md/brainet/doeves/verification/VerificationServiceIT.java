@@ -2,7 +2,6 @@ package md.brainet.doeves.verification;
 
 import md.brainet.doeves.IntegrationTestBase;
 import md.brainet.doeves.exception.*;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,7 +9,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.time.LocalDateTime;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -65,13 +63,12 @@ class VerificationServiceIT extends IntegrationTestBase {
     @Test
     void verify_codeIsNotCorrect_expectVerificationBadCodeException() {
         VerificationDetails details = VerificationDetailsFactory.build(new SixDigitsCodeGenerator());
-        details.setMissingAttempts(0);
         Integer verificationDetailsId = verificationDetailsDao.insertVerificationDetails(details);
         verificationDetailsDao.updateVerificationDetails(UNVERIFIED_EMAIL, verificationDetailsId);
 
         Executable executable = () -> verificationService.verify(UNVERIFIED_EMAIL, "312312");
 
-        assertThrows(VerificationCodeExpiredException.class, executable);
+        assertThrows(VerificationBadCodeException.class, executable);
     }
 
     @Test

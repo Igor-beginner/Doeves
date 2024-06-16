@@ -1,5 +1,6 @@
 package md.brainet.doeves.verification;
 
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
@@ -25,16 +26,43 @@ public class JDBCVerificationDetailsDao implements VerificationDetailsDao {
     }
 
     @Override
-    public Optional<VerificationDetails> selectVerificationDetailsByEmail(String email) {
+    public void decrementVerificationDetailsAttempt(Integer id) {
         var sql = """
                  UPDATE verification_details
                  SET missing_attempts = missing_attempts - 1
+                 WHERE id = ?;
+                 """;
+
+        jdbcTemplate.update(sql, id);
+    }
+
+    @Override
+    public Optional<VerificationDetails> decrementVerificationDetailsAttemptByEmail(String email) {
+        var sql = """
+                UPDATE verification_details
+                SET missing_attempts = missing_attempts - 1
+                WHERE id = (
+                    SELECT verification_details_id
+                    FROM users
+                    WHERE email = ?
+                )
+                RETURNING *;
+                """;
+        return Optional.ofNullable(
+                jdbcTemplate.query(sql, mapper, email)
+        );
+    }
+
+    @Override
+    public Optional<VerificationDetails> selectVerificationDetailsByEmail(String email) {
+        var sql = """
+                 SELECT *
+                 FROM verification_details
                  WHERE id = (
-                     SELECT verification_details_id
-                     FROM users 
-                     WHERE email = ?
-                 )
-                 RETURNING *;
+                    SELECT verification_details_id
+                    FROM users
+                    WHERE email = ?
+                 );
                  """;
 
         return Optional.ofNullable(
