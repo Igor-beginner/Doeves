@@ -77,7 +77,7 @@ class JDBCUserDaoIT extends IntegrationTestBase {
     @Test
     void insertUser_emailUniqueAndPasswordValid_expectCorrectId() {
         //given
-        var expectedId = 3;
+        var expectedId = 4;
         var user = new User();
         user.setEmail("valera777@gmail.com");
         user.setPassword("23123123");

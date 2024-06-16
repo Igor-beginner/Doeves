@@ -47,7 +47,7 @@ class UserControllerIT extends IntegrationTestBase {
                 status().is(HttpStatus.CREATED.value())
         ).andReturn();
 
-        var user = userDao.selectUserById(3);
+        var user = userDao.selectUserById(4);
         assertEquals("valeratest@gmail.com", user.get().getEmail());
     }
 

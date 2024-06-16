@@ -76,7 +76,7 @@ INSERT INTO task(
              1
          );
 
-SELECT SETVAL('task_id_seq', (SELECT MAX(id) FROM users) + 1);
+SELECT SETVAL('task_id_seq', (SELECT MAX(id) FROM users));
 
 INSERT INTO task(
     id,

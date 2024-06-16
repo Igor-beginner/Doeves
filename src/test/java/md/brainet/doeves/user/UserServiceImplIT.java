@@ -28,7 +28,7 @@ class UserServiceImplIT extends IntegrationTestBase {
     @Test
     void makeUser_newUserNotExist_expectCorrectId() {
         //given
-        Integer expectedId = 3;
+        Integer expectedId = 4;
         NewUserRequest request = new NewUserRequest(
                 "email@mail.ru",
                 "213123"
