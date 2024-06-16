@@ -65,9 +65,10 @@ public class JDBCUserDao implements UserDao {
         var sql = """
                 INSERT INTO users (
                     email,
-                    password
+                    password,
+                    verification_details_id
                 )
-                VALUES (?, ?);
+                VALUES (?, ?, ?);
                 """;
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -81,6 +82,7 @@ public class JDBCUserDao implements UserDao {
 
             preparedStatement.setString(1, user.getEmail());
             preparedStatement.setString(2, user.getPassword());
+            preparedStatement.setObject(3, user.getVerificationDetailsId());
 
             return preparedStatement;
         }, keyHolder);
@@ -120,17 +122,6 @@ public class JDBCUserDao implements UserDao {
                 """;
 
         return jdbcTemplate.update(sql, role.name(), userId) > 0;
-    }
-
-    @Override
-    public boolean verifyUserByEmail(String email) {
-        var sql = """
-                UPDATE users
-                SET verified = true
-                WHERE email = ?;
-                """;
-
-        return jdbcTemplate.update(sql, email) > 0;
     }
 
     private Optional<User> selectUserByCriteria(

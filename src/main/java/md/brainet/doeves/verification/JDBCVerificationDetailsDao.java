@@ -91,4 +91,37 @@ public class JDBCVerificationDetailsDao implements VerificationDetailsDao {
 
         return  (int) keyHolder.getKeys().get("id");
     }
+
+    @Override
+    public boolean verifyUserByEmail(String email) {
+        var sql = """
+                UPDATE users
+                SET verified = true
+                WHERE email = ?;
+                """;
+
+        return jdbcTemplate.update(sql, email) > 0;
+    }
+
+    @Override
+    public boolean updateUserVerificationDetailsId(String email,
+                                                   Integer newVerificationDetailsId) {
+        var sql = """
+                UPDATE users
+                SET verification_details_id = ?
+                WHERE email = ?
+                """;
+
+        return jdbcTemplate.update(sql, newVerificationDetailsId, email) > 0;
+    }
+
+    @Override
+    public boolean isUserVerified(String email) {
+        var sql = """
+                SELECT verified
+                FROM users
+                WHERE email = ?;
+                """;
+        return Boolean.TRUE.equals(jdbcTemplate.queryForObject(sql, Boolean.class, email));
+    }
 }

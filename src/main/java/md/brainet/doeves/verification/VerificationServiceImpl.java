@@ -1,13 +1,18 @@
 package md.brainet.doeves.verification;
 
 import md.brainet.doeves.exception.UserNotFoundException;
+import md.brainet.doeves.exception.VerificationBadCodeException;
+import md.brainet.doeves.exception.VerificationCodeExpiredException;
 import md.brainet.doeves.exception.VerificationException;
 import md.brainet.doeves.mail.MailService;
 import md.brainet.doeves.mail.MessageRequest;
-import md.brainet.doeves.mail.MessageRequestFactory;
-import md.brainet.doeves.mail.MessageType;
+import md.brainet.doeves.user.User;
 import md.brainet.doeves.user.UserDao;
+import md.brainet.doeves.user.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -15,57 +20,71 @@ import java.time.LocalDateTime;
 @Service
 public class VerificationServiceImpl implements VerificationService {
 
+    private static final Logger LOG = LoggerFactory.getLogger(VerificationController.class);
     private static final String VERIFICATION_MESSAGE_SUBJECT = "Verification code:";
     private static final String VERIFICATION_MESSAGE_CONTENT = "Your code: %s. Please, don't give it other persons";
 
     private final VerificationDetailsDao verificationDao;
-    private final UserDao userDao;
+    private final UserService userService;
     private final MailService mailService;
     private final CodeGenerator codeGenerator;
 
     public VerificationServiceImpl(
             VerificationDetailsDao verificationDao,
-            UserDao userDao,
+            UserService userService,
             MailService mailService,
             CodeGenerator codeGenerator) {
         this.verificationDao = verificationDao;
-        this.userDao = userDao;
+        this.userService = userService;
         this.mailService = mailService;
         this.codeGenerator = codeGenerator;
     }
 
     @Override
-    @Transactional
+    @Transactional(isolation = Isolation.REPEATABLE_READ)
     public void verify(String email, String code) {
+
+        if(verificationDao.isUserVerified(email)) {
+            throw new VerificationException(
+                    "User with email %s already verified".formatted(email)
+            );
+        }
+
         VerificationDetails details =
                 verificationDao.selectVerificationDetailsByEmail(email)
                         .orElseThrow(() -> new UserNotFoundException(email));
 
         if (LocalDateTime.now().isAfter(details.getExpireDate())
-                || details.getMissingAttempts() == 0) {
-            sendNewCodeTo(email);
-            throw new VerificationException(email, code);
+                || details.getMissingAttempts() <= 0) {
+            throw new VerificationCodeExpiredException(email, code);
         } else if (!details.getCode().equals(code)) {
-            throw new VerificationException(email, code);
+            throw new VerificationBadCodeException(email, code);
         }
 
-        userDao.verifyUserByEmail(email);
+        verificationDao.verifyUserByEmail(email);
     }
 
     @Override
-    public void sendNewCodeTo(String email) {
+    @Transactional(isolation = Isolation.REPEATABLE_READ)
+    public void generateNewCodeFor(String email) {
         VerificationDetails details = VerificationDetailsFactory
                 .build(codeGenerator);
 
-        boolean updated = verificationDao.updateVerificationDetails(email, details);
+        User user = userService.findUser(email);
 
-        if (!updated) {
-            throw new UserNotFoundException(email);
+        if(user.getVerificationDetailsId() == null) {
+            Integer detailsId = verificationDao.insertVerificationDetails(details);
+            verificationDao.updateUserVerificationDetailsId(email, detailsId);
+        }else {
+           verificationDao.updateVerificationDetails(email, details);
         }
-
+        //todo return verification code and invoke method to send message from controller
         sendVerificationMessage(email, details.getCode());
+
+        LOG.debug("Verification code for {} is {}", email, details.getCode());
     }
 
+    //todo extract method using Factory pattern
     private void sendVerificationMessage(String email, String code) {
         MessageRequest messageRequest = new MessageRequest(
                 email,
@@ -74,14 +93,5 @@ public class VerificationServiceImpl implements VerificationService {
         );
 //        MessageRequest request = MessageRequestFactory.build(MessageType.VERIFICATION_CONFIRMATION, email);
         mailService.send(messageRequest);
-    }
-
-
-    @Override
-    public Integer generateVerificationDetailsFor(String email) {
-        VerificationDetails details = VerificationDetailsFactory.build(codeGenerator);
-        Integer id = verificationDao.insertVerificationDetails(details);
-        sendVerificationMessage(email, details.getCode());
-        return id;
     }
 }

@@ -45,6 +45,15 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public User findUser(String email) {
+        return userDao.selectUserByEmail(email)
+                .orElseThrow(() -> new NoSuchElementException(
+                                "User with email [%s] doesn't exist".formatted(email)
+                        )
+                );
+    }
+
+    @Override
     public void disableUser(Integer userId) {
         throw new RuntimeException("While it isn't implemented");
     }

@@ -8,6 +8,4 @@ public interface UserDao {
     Integer insertUserAndDefaultRole(User user);
     Optional<User> selectUserByEmail(String email);
     boolean changeUserRoleByUserId(Integer userId, Role role);
-
-    boolean verifyUserByEmail(String email);
 }
