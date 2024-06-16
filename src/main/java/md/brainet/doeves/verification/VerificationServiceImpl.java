@@ -1,13 +1,9 @@
 package md.brainet.doeves.verification;
 
-import md.brainet.doeves.exception.UserNotFoundException;
-import md.brainet.doeves.exception.VerificationBadCodeException;
-import md.brainet.doeves.exception.VerificationCodeExpiredException;
-import md.brainet.doeves.exception.VerificationException;
+import md.brainet.doeves.exception.*;
 import md.brainet.doeves.mail.MailService;
 import md.brainet.doeves.mail.MessageRequest;
 import md.brainet.doeves.user.User;
-import md.brainet.doeves.user.UserDao;
 import md.brainet.doeves.user.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,15 +40,15 @@ public class VerificationServiceImpl implements VerificationService {
     @Transactional(isolation = Isolation.REPEATABLE_READ)
     public void verify(String email, String code) {
 
+        VerificationDetails details =
+                verificationDao.selectVerificationDetailsByEmail(email)
+                        .orElseThrow(VerificationCodeIsEmptyException::new);
+
         if(verificationDao.isUserVerified(email)) {
             throw new VerificationException(
                     "User with email %s already verified".formatted(email)
             );
         }
-
-        VerificationDetails details =
-                verificationDao.selectVerificationDetailsByEmail(email)
-                        .orElseThrow(() -> new UserNotFoundException(email));
 
         if (LocalDateTime.now().isAfter(details.getExpireDate())
                 || details.getMissingAttempts() <= 0) {
@@ -72,11 +68,11 @@ public class VerificationServiceImpl implements VerificationService {
 
         User user = userService.findUser(email);
 
-        if(user.getVerificationDetailsId() == null) {
+        if(user.getVerificationDetailsId() == 0) {
             Integer detailsId = verificationDao.insertVerificationDetails(details);
-            verificationDao.updateUserVerificationDetailsId(email, detailsId);
+            verificationDao.updateVerificationDetails(email, detailsId);
         }else {
-           verificationDao.updateVerificationDetails(email, details);
+            verificationDao.updateVerificationDetails(email, details);
         }
         //todo return verification code and invoke method to send message from controller
         sendVerificationMessage(email, details.getCode());

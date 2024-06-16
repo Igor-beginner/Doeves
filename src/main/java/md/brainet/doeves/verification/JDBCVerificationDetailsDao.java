@@ -68,8 +68,9 @@ public class JDBCVerificationDetailsDao implements VerificationDetailsDao {
         var sql = """
                 INSERT INTO verification_details (
                     code,
-                    expire_date
-                ) VALUES (?, ?);
+                    expire_date,
+                    missing_attempts
+                ) VALUES (?, ?, ?);
                 """;
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
@@ -84,6 +85,10 @@ public class JDBCVerificationDetailsDao implements VerificationDetailsDao {
             preparedStatement.setTimestamp(
                     2,
                     Timestamp.valueOf(details.getExpireDate())
+            );
+            preparedStatement.setInt(
+                    3,
+                    details.getMissingAttempts()
             );
 
             return preparedStatement;
@@ -104,8 +109,8 @@ public class JDBCVerificationDetailsDao implements VerificationDetailsDao {
     }
 
     @Override
-    public boolean updateUserVerificationDetailsId(String email,
-                                                   Integer newVerificationDetailsId) {
+    public boolean updateVerificationDetails(String email,
+                                             Integer newVerificationDetailsId) {
         var sql = """
                 UPDATE users
                 SET verification_details_id = ?

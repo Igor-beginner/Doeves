@@ -8,6 +8,10 @@ public class VerificationDetails {
     private LocalDateTime expireDate;
     private Integer missingAttempts;
 
+    public VerificationDetails() {
+        this.missingAttempts = 5;
+    }
+
     public Integer getId() {
         return id;
     }

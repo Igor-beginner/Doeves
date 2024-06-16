@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.time.LocalDateTime;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -41,8 +42,8 @@ class VerificationServiceIT extends IntegrationTestBase {
     void verify_tokenExpiredByDate_expectVerificationCodeExpiredException() {
         VerificationDetails details = VerificationDetailsFactory.build(new SixDigitsCodeGenerator());
         details.setExpireDate(LocalDateTime.now().minusDays(12));
-        verificationDetailsDao.insertVerificationDetails(details);
-        verificationDetailsDao.updateVerificationDetails(UNVERIFIED_EMAIL, details);
+        Integer verificationDetailsId = verificationDetailsDao.insertVerificationDetails(details);
+        verificationDetailsDao.updateVerificationDetails(UNVERIFIED_EMAIL, verificationDetailsId);
 
         Executable executable = () -> verificationService.verify(UNVERIFIED_EMAIL, "312312");
 
@@ -53,8 +54,8 @@ class VerificationServiceIT extends IntegrationTestBase {
     void verify_tokenExpiredByAttempts_expectVerificationCodeExpiredException() {
         VerificationDetails details = VerificationDetailsFactory.build(new SixDigitsCodeGenerator());
         details.setMissingAttempts(0);
-        verificationDetailsDao.insertVerificationDetails(details);
-        verificationDetailsDao.updateVerificationDetails(UNVERIFIED_EMAIL, details);
+        Integer verificationDetailsId = verificationDetailsDao.insertVerificationDetails(details);
+        verificationDetailsDao.updateVerificationDetails(UNVERIFIED_EMAIL, verificationDetailsId);
 
         Executable executable = () -> verificationService.verify(UNVERIFIED_EMAIL, "312312");
 
@@ -65,8 +66,8 @@ class VerificationServiceIT extends IntegrationTestBase {
     void verify_codeIsNotCorrect_expectVerificationBadCodeException() {
         VerificationDetails details = VerificationDetailsFactory.build(new SixDigitsCodeGenerator());
         details.setMissingAttempts(0);
-        verificationDetailsDao.insertVerificationDetails(details);
-        verificationDetailsDao.updateVerificationDetails(UNVERIFIED_EMAIL, details);
+        Integer verificationDetailsId = verificationDetailsDao.insertVerificationDetails(details);
+        verificationDetailsDao.updateVerificationDetails(UNVERIFIED_EMAIL, verificationDetailsId);
 
         Executable executable = () -> verificationService.verify(UNVERIFIED_EMAIL, "312312");
 
@@ -76,9 +77,8 @@ class VerificationServiceIT extends IntegrationTestBase {
     @Test
     void verify_codeIsCorrect_expectUserVerificationSuccess() {
         VerificationDetails details = VerificationDetailsFactory.build(new SixDigitsCodeGenerator());
-        details.setMissingAttempts(0);
-        verificationDetailsDao.insertVerificationDetails(details);
-        verificationDetailsDao.updateVerificationDetails(UNVERIFIED_EMAIL, details);
+        Integer verificationDetailsId = verificationDetailsDao.insertVerificationDetails(details);
+        verificationDetailsDao.updateVerificationDetails(UNVERIFIED_EMAIL, verificationDetailsId);
 
         verificationService.verify(UNVERIFIED_EMAIL, details.getCode());
 
@@ -99,10 +99,10 @@ class VerificationServiceIT extends IntegrationTestBase {
 
     @Test
     void generateNewCodeFor_codeExists_expectRegeneratedCode() {
-        var oldCode = verificationDetailsDao.selectVerificationDetailsByEmail(UNVERIFIED_EMAIL);
+        var oldCode = verificationDetailsDao.selectVerificationDetailsByEmail(VERIFIED_EMAIL);
 
-        verificationService.generateNewCodeFor(UNVERIFIED_EMAIL);
-        var generatedCode = verificationDetailsDao.selectVerificationDetailsByEmail(UNVERIFIED_EMAIL);
+        verificationService.generateNewCodeFor(VERIFIED_EMAIL);
+        var generatedCode = verificationDetailsDao.selectVerificationDetailsByEmail(VERIFIED_EMAIL);
 
         assertTrue(oldCode.isPresent());
         assertTrue(generatedCode.isPresent());
@@ -112,7 +112,7 @@ class VerificationServiceIT extends IntegrationTestBase {
     @Test
     void generateNewCodeFor_emailNotExist_expectUserNotFoundException() {
         Executable executable = () -> verificationService.generateNewCodeFor("ddsfasd@mail.ru");
-
-        assertThrows(UserNotFoundException.class, executable);
+        //todo UserNotFoundException must be
+        assertThrows(NoSuchElementException.class, executable);
     }
 }

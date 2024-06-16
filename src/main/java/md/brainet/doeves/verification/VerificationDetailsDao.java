@@ -9,7 +9,7 @@ public interface VerificationDetailsDao {
     Integer insertVerificationDetails(VerificationDetails details);
 
     boolean verifyUserByEmail(String email);
-    boolean updateUserVerificationDetailsId(String email, Integer newVerificationDetailsId);
+    boolean updateVerificationDetails(String email, Integer newVerificationDetailsId);
 
     boolean isUserVerified(String email);
 }
