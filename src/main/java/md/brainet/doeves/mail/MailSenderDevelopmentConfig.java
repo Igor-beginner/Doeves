@@ -11,7 +11,7 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 public class MailSenderDevelopmentConfig {
 
     @Bean
-    @Profile("dev")
+    @Profile({"dev", "test"})
     public JavaMailSender javaMailSender() {
         return new JavaMailSenderImpl();
     }

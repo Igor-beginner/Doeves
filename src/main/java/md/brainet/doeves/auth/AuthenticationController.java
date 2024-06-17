@@ -23,9 +23,7 @@ public class AuthenticationController {
     @PostMapping("login")
     public ResponseEntity<?> login(@RequestBody AuthenticationRequest request) {
         logger.debug("User with email [{}] tried to sign in.", request.email());
-
         AuthenticationResponse response = authenticationService.login(request);
-
         logger.info("User with email [{}] signed in.", request.email());
         return ResponseEntity.ok()
                 .header(HttpHeaders.AUTHORIZATION, response.token())
