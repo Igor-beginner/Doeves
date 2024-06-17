@@ -4,10 +4,10 @@ spring:
       enabled: true
       additional-paths: src/main/java
   mail:
-    host: ${spring.mail.host}
-    username: ${spring.mail.username}
-    password: ${spring.mail.password}
-    port: ${spring.mail.port}
+#    host: ${spring.mail.host}
+#    username: ${spring.mail.username}
+#    password: ${spring.mail.password}
+#    port: ${spring.mail.port}
 
     protocol: smtp
     debug: true

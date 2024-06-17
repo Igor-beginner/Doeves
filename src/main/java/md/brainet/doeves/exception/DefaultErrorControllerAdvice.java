@@ -176,7 +176,7 @@ public class DefaultErrorControllerAdvice {
         );
         LOG.debug(
                 "User [email='{}'] sent unreadable data to[url='{}']",
-                user.getEmail(),
+                user == null ? null : user.getEmail(),
                 request.getRequestURI()
         );
         return new ResponseEntity<>(apiError, status);

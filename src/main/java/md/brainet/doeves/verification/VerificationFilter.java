@@ -12,6 +12,7 @@ import md.brainet.doeves.jwt.TokenAuthorizationHeaderPrefix;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -57,6 +58,7 @@ public class VerificationFilter extends OncePerRequestFilter {
                         """.formatted(
                                 "Your account is not verified. Please confirm yourself."
                 ));
+                response.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
                 return;
             } else if (contains && verified) {
                 response.setStatus(HttpStatus.BAD_REQUEST.value());
