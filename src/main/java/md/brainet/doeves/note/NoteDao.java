@@ -4,11 +4,14 @@ import md.brainet.doeves.catalog.Catalog;
 import md.brainet.doeves.catalog.CatalogDTO;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface NoteDao {
-    Note insertNote(NoteDTO noteDTO);
-    void updateOrderNumberByNoteId(Integer noteId, Integer orderNumber);
-    void updateNameByNoteId(Integer noteId, String noteName);
-    void updateDescriptionByNoteId(Integer noteId, String noteDescription);
+    Optional<Note> insertNote(NoteDTO noteDTO);
+    boolean updateOrderNumberByNoteId(Integer noteId, Integer orderNumber);
+    boolean updateNameByNoteId(Integer noteId, String noteName);
+    boolean updateDescriptionByNoteId(Integer noteId, String noteDescription);
     boolean removeByNoteId(Integer noteId);
+
+    Optional<Note> selectByNoteId(Integer noteId);
 }

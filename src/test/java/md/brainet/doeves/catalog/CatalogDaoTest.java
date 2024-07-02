@@ -4,17 +4,21 @@ import md.brainet.doeves.IntegrationTestBase;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.jdbc.Sql;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
+@Sql(
+        scripts = "classpath:data/catalog_test_data.sql",
+        executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD
+)
 class CatalogDaoTest extends IntegrationTestBase {
 
     @Autowired
     CatalogDao catalogDao;
-
 
     @Test
     void selectCatalogById_idExists_expectCatalogPresent() {
