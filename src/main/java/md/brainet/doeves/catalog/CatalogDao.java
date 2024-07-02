@@ -7,9 +7,10 @@ import java.util.Optional;
 
 public interface CatalogDao {
     Catalog insertCatalog(CatalogDTO catalogDTO);
+    Optional<Catalog> selectCatalogById(Integer id);
     List<Catalog> selectAllCatalogsByOwnerId(Integer ownerId, Integer offset, Integer limit);
-    void updateOrderNumberByCatalogId(Integer catalogId, Integer orderNumber);
-    void updateNameByCatalogId(Integer catalogId, String catalogName);
+    boolean updateOrderNumberByCatalogId(Integer catalogId, Integer orderNumber);
+    boolean updateNameByCatalogId(Integer catalogId, String catalogName);
     boolean removeByCatalogId(Integer catalogId);
     List<Note> selectAllNotesByCatalogId(Integer catalogId, Integer offset, Integer limit);
 }
