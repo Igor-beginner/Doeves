@@ -56,7 +56,7 @@ class NoteDaoTest extends IntegrationTestBase {
         var noteDTO = new NoteDTO("SomeName", null, catalogId, 0);
 
         //when
-        var note = noteDao.insertNote(noteDTO);
+        var note = noteDao.insertNote(1, noteDTO);
 
         //then
         var notes = catalogDao.selectAllNotesByCatalogId(catalogId, 0, 10);
@@ -72,7 +72,7 @@ class NoteDaoTest extends IntegrationTestBase {
         var noteDTO = new NoteDTO("SomeName", null, catalogId, 0);
 
         //when
-        var note = noteDao.insertNote(noteDTO);
+        var note = noteDao.insertNote(1, noteDTO);
 
         //then
         var notes = catalogDao.selectAllNotesByCatalogId(catalogId, 0, 10);
@@ -199,5 +199,95 @@ class NoteDaoTest extends IntegrationTestBase {
 
         //then
         assertFalse(updated);
+    }
+
+    @Test
+    void updateCatalogId_catalogExists_expectTrue() {
+        //given
+        final int newCatalogId = 1;
+        final int noteId = 3;
+
+        //when
+        var updated = noteDao.updateCatalogId(newCatalogId, noteId);
+
+        //then
+        assertTrue(updated);
+        var note = noteDao.selectByNoteId(noteId);
+        assertTrue(note.isPresent());
+        assertEquals(newCatalogId, note.get().catalogId());
+        var catalog = catalogDao.selectAllNotesByCatalogId(newCatalogId, 0, 10);
+        assertEquals(1, catalog.size());
+    }
+
+    @Test
+    void updateCatalogId_catalogNotExists_expectFalse() {
+        //given
+        final int newCatalogId = 32;
+        final int noteId = 3;
+
+        //when
+        var updated = noteDao.updateCatalogId(newCatalogId, noteId);
+
+        //then
+        assertFalse(updated);
+        var note = noteDao.selectByNoteId(noteId);
+        assertFalse(note.isPresent());
+    }
+
+    @Test
+    void updateCatalogId_noteNotExists_expectFalse() {
+        //given
+        final int newCatalogId = 1;
+        final int noteId = 32;
+
+        //when
+        var updated = noteDao.updateCatalogId(newCatalogId, noteId);
+
+        //then
+        assertFalse(updated);
+        var note = noteDao.selectByNoteId(noteId);
+        assertTrue(note.isPresent());
+        assertNotEquals(newCatalogId, note.get().catalogId());
+    }
+
+    @Test
+    void updateCatalogIdNull_expectTrue() {
+        //given
+        final int noteId = 3;
+
+        //when
+        var updated = noteDao.updateCatalogId(null, noteId);
+
+        //then
+        assertTrue(updated);
+        var note = noteDao.selectByNoteId(noteId);
+        assertTrue(note.isPresent());
+        assertNull(note.get().catalogId());
+    }
+
+    @Test
+    void selectAllNotesByOwnerIdIncludingCatalogs_expectCorrectResponseSize() {
+        //given
+        final int expectedNotesCountIncludingCatalogs = 3;
+        final int userId = 1;
+
+        //when
+        var notes = noteDao.selectAllNotesByOwnerIdIncludingCatalogs(userId, 0 ,10);
+
+        //then
+        assertEquals(expectedNotesCountIncludingCatalogs, notes.size());
+    }
+
+    @Test
+    void selectAllNotesByOwnerIdWithoutCatalogs_expectCorrectResponseSize() {
+        //given
+        final int expectedNotesCountIncludingCatalogs = 1;
+        final int userId = 1;
+
+        //when
+        var notes = noteDao.selectAllNotesByOwnerIdWithoutCatalogs(userId, 0 ,10);
+
+        //then
+        assertEquals(expectedNotesCountIncludingCatalogs, notes.size());
     }
 }

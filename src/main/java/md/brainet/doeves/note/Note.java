@@ -9,6 +9,7 @@ public record Note(
         String description,
         LocalDateTime dateOfCreate,
         Integer catalogId,
-        Integer orderNumber
+        Integer orderNumber,
+        Integer ownerId
 ) {
 }
