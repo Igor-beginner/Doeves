@@ -13,6 +13,6 @@ INSERT INTO note(id, owner_id, order_number, catalog_id, title, description)
 VALUES(2, 1, 1, 2, 'Some Note Title2', 'Some Description here2');
 
 INSERT INTO note(id, owner_id, order_number, catalog_id, title, description)
-VALUES(3, 1, 1, NULL, 'Some Note Title2', 'Some Description here2');
+VALUES(3, 1, 2, NULL, 'Some Note Title2', 'Some Description here2');
 
 SELECT SETVAL('note_id_seq', (SELECT MAX(id) FROM note));
