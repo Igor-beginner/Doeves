@@ -11,10 +11,6 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-@Sql(
-        scripts = "classpath:data/catalog_test_data.sql",
-        executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD
-)
 class CatalogDaoTest extends IntegrationTestBase {
 
     @Autowired
@@ -56,7 +52,7 @@ class CatalogDaoTest extends IntegrationTestBase {
         );
 
         //when
-        var actualId = catalogDao.insertCatalog(catalog);
+        var actualId = catalogDao.insertCatalog(catalog).id();
 
         //then
         assertEquals(expectedId, actualId);
@@ -66,7 +62,7 @@ class CatalogDaoTest extends IntegrationTestBase {
     void selectAllCatalogsByOwnerId() {
         //given
         final int ownerId = 1;
-        final int expectedCountOfData = 3;
+        final int expectedCountOfData = 2;
 
         //when
         var catalogs = catalogDao.selectAllCatalogsByOwnerId(ownerId,0,10);
@@ -86,6 +82,8 @@ class CatalogDaoTest extends IntegrationTestBase {
 
         //then
         assertTrue(updated);
+        var catalog = catalogDao.selectCatalogById(baseCatalogId);
+        assertEquals(baseCatalogId, catalog.get().id());
     }
 
     @Test
@@ -98,7 +96,11 @@ class CatalogDaoTest extends IntegrationTestBase {
         var updated = catalogDao.updateOrderNumberByCatalogId(baseCatalogId, newOrderNum);
 
         //then
-        assertFalse(updated);
+        assertTrue(updated);
+        var catalog = catalogDao.selectCatalogById(2);
+        assertEquals(newOrderNum + 1, catalog.get().orderNumber());
+        catalog = catalogDao.selectCatalogById(baseCatalogId);
+        assertEquals(newOrderNum, catalog.get().orderNumber());
     }
 
     @Test
