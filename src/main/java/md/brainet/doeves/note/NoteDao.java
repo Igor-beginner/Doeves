@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface NoteDao {
+    //TODO write test case when we try to insert note to busy position
+    //TODO write test case when we try to insert note to null position (by default assign max + 1 order number)
     Optional<Note> insertNote(Integer ownerId, NoteDTO noteDTO);
     boolean updateOrderNumberByNoteId(Integer noteId, Integer orderNumber);
     boolean updateNameByNoteId(Integer noteId, String noteName);
