@@ -127,6 +127,7 @@ public class JdbcNoteDao implements NoteDao {
                 SELECT *
                 FROM note
                 WHERE owner_id = ?
+                ORDER BY order_number
                 OFFSET ?
                 LIMIT ?;
                 """;
@@ -141,6 +142,7 @@ public class JdbcNoteDao implements NoteDao {
                 FROM note
                 WHERE owner_id = ?
                 AND catalog_id IS NULL
+                ORDER BY order_number
                 OFFSET ?
                 LIMIT ?;
                 """;

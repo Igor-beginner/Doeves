@@ -39,6 +39,27 @@ class CatalogServiceTest extends IntegrationTestBase {
     }
 
     @Test
+    void createCatalog_orderNumberIsNotPresent_expectAssigningOrderNumberZero() {
+        //given
+        var payload = new CatalogDTO(
+                "Admin catalog",
+                null,
+                1
+        );
+
+        //when
+        var catalog = catalogService.createCatalog(payload);
+
+        //then
+        assertEquals(0, catalog.orderNumber());
+        var catalogs = catalogDao.selectAllCatalogsByOwnerId(payload.ownerId(), 0, 10);
+        assertEquals("Admin catalog", catalogs.get(0).name());
+        assertEquals(0, catalogs.get(0).orderNumber());
+        assertEquals(1, catalogs.get(1).orderNumber());
+        assertEquals(2, catalogs.get(2).orderNumber());
+    }
+
+    @Test
     void createCatalog_userNotExits_expectUserNotFoundException() {
         //given
         var payload = new CatalogDTO(

@@ -1,7 +1,7 @@
 package md.brainet.doeves.note;
 
 public record LimitedListNoteRequest(
-        Integer noteId,
+        Integer ownerId,
         Integer offset,
         Integer limit,
         Boolean includingCatalogs

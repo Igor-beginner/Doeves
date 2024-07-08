@@ -71,6 +71,7 @@ public class JdbcCatalogDao implements CatalogDao{
                 INNER JOIN users u
                 ON u.id = c.owner_id
                 WHERE c.owner_id = ?
+                ORDER BY order_number
                 OFFSET ?
                 LIMIT ?;
                 """;
@@ -123,6 +124,7 @@ public class JdbcCatalogDao implements CatalogDao{
                 SELECT *
                 FROM note
                 WHERE catalog_id = ?
+                ORDER BY order_number
                 OFFSET ?
                 LIMIT ?;
                 """;
