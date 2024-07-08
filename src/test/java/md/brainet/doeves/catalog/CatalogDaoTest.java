@@ -47,12 +47,11 @@ class CatalogDaoTest extends IntegrationTestBase {
 
         var catalog = new CatalogDTO(
                 "My First Catalog",
-                0,
-                1
+                0
         );
 
         //when
-        var actualId = catalogDao.insertCatalog(catalog).id();
+        var actualId = catalogDao.insertCatalog(1, catalog).id();
 
         //then
         assertEquals(expectedId, actualId);

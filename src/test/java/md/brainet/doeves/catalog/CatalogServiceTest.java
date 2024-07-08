@@ -25,12 +25,11 @@ class CatalogServiceTest extends IntegrationTestBase {
         //given
         var payload = new CatalogDTO(
                 "Admin catalog",
-                1,
-                2
+                1
         );
 
         //when
-        var catalog = catalogService.createCatalog(payload);
+        var catalog = catalogService.createCatalog(2, payload);
 
         //then
         var catalogs = catalogDao.selectAllCatalogsByOwnerId(payload.ownerId(), 0, 10);
@@ -43,16 +42,15 @@ class CatalogServiceTest extends IntegrationTestBase {
         //given
         var payload = new CatalogDTO(
                 "Admin catalog",
-                null,
-                1
+                null
         );
 
         //when
-        var catalog = catalogService.createCatalog(payload);
+        var catalog = catalogService.createCatalog(1, payload);
 
         //then
         assertEquals(0, catalog.orderNumber());
-        var catalogs = catalogDao.selectAllCatalogsByOwnerId(payload.ownerId(), 0, 10);
+        var catalogs = catalogDao.selectAllCatalogsByOwnerId(1, 0, 10);
         assertEquals("Admin catalog", catalogs.get(0).name());
         assertEquals(0, catalogs.get(0).orderNumber());
         assertEquals(1, catalogs.get(1).orderNumber());
@@ -64,12 +62,11 @@ class CatalogServiceTest extends IntegrationTestBase {
         //given
         var payload = new CatalogDTO(
                 "Admin catalog",
-                1,
-                213
+                1
         );
 
         //when
-        Executable catalog = () -> catalogService.createCatalog(payload);
+        Executable catalog = () -> catalogService.createCatalog(223, payload);
 
         //then
         assertThrows(UserNotFoundException.class, catalog);

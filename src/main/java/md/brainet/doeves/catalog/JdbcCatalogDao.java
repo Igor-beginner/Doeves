@@ -28,7 +28,7 @@ public class JdbcCatalogDao implements CatalogDao{
     }
 
     @Override
-    public Catalog insertCatalog(CatalogDTO catalogDTO) {
+    public Catalog insertCatalog(Integer ownerId, CatalogDTO catalogDTO) {
         var sql = """
                 INSERT INTO catalog(title, owner_id, order_number)
                 VALUES(?, ?, ?)
@@ -36,7 +36,7 @@ public class JdbcCatalogDao implements CatalogDao{
                 """;
         return jdbcTemplate.query(sql, catalogMapper,
                 catalogDTO.name(),
-                catalogDTO.ownerId(),
+                ownerId,
                 catalogDTO.orderNumber()
         );
     }

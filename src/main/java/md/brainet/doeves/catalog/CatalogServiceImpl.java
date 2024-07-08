@@ -17,16 +17,15 @@ public class CatalogServiceImpl implements CatalogService {
     }
 
     @Override
-    public Catalog createCatalog(CatalogDTO catalogDTO) {
+    public Catalog createCatalog(Integer ownerId, CatalogDTO catalogDTO) {
         if(Objects.isNull(catalogDTO.orderNumber())) {
             catalogDTO = new CatalogDTO(
                     catalogDTO.name(),
-                    0,
-                    catalogDTO.ownerId()
+                    0
             );
         }
 
-        return catalogDao.insertCatalog(catalogDTO);
+        return catalogDao.insertCatalog(ownerId, catalogDTO);
     }
 
     @Override
@@ -52,6 +51,14 @@ public class CatalogServiceImpl implements CatalogService {
     public void removeCatalog(Integer catalogId) {
         boolean removed = catalogDao.removeByCatalogId(catalogId);
         if(!removed) {
+            throw new CatalogNotFoundException(catalogId);
+        }
+    }
+
+    @Override
+    public void changeName(Integer catalogId, String newName) {
+        boolean updated = catalogDao.updateNameByCatalogId(catalogId, newName);
+        if(!updated) {
             throw new CatalogNotFoundException(catalogId);
         }
     }

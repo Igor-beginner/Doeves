@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface CatalogDao {
-    Catalog insertCatalog(CatalogDTO catalogDTO);
+    Catalog insertCatalog(Integer ownerId, CatalogDTO catalogDTO);
     Optional<Catalog> selectCatalogById(Integer id);
     List<Catalog> selectAllCatalogsByOwnerId(Integer ownerId, Integer offset, Integer limit);
     boolean updateOrderNumberByCatalogId(Integer catalogId, Integer orderNumber);
