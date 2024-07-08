@@ -1,9 +1,12 @@
 package md.brainet.doeves.catalog;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.time.LocalDateTime;
 
 public record CatalogDTO(
         String name,
+        @JsonProperty(defaultValue = "0")
         Integer orderNumber,
         Integer ownerId
 ) {

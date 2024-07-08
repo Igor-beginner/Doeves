@@ -2,13 +2,11 @@ package md.brainet.doeves.note;
 
 import md.brainet.doeves.IntegrationTestBase;
 import md.brainet.doeves.catalog.CatalogDao;
-import org.checkerframework.checker.units.qual.A;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.test.context.jdbc.Sql;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -210,7 +208,7 @@ class NoteDaoTest extends IntegrationTestBase {
         final int noteId = 3;
 
         //when
-        var updated = noteDao.updateCatalogId(newCatalogId, noteId);
+        var updated = noteDao.updateCatalogIdForNote(newCatalogId, noteId);
 
         //then
         assertTrue(updated);
@@ -228,7 +226,7 @@ class NoteDaoTest extends IntegrationTestBase {
         final int noteId = 3;
 
         //when
-        Executable executable = () -> noteDao.updateCatalogId(newCatalogId, noteId);
+        Executable executable = () -> noteDao.updateCatalogIdForNote(newCatalogId, noteId);
 
         //then
         assertThrows(DataIntegrityViolationException.class, executable);
@@ -241,7 +239,7 @@ class NoteDaoTest extends IntegrationTestBase {
         final int noteId = 32;
 
         //when
-        var updated = noteDao.updateCatalogId(newCatalogId, noteId);
+        var updated = noteDao.updateCatalogIdForNote(newCatalogId, noteId);
 
         //then
         assertFalse(updated);
@@ -253,7 +251,7 @@ class NoteDaoTest extends IntegrationTestBase {
         final int noteId = 3;
 
         //when
-        var updated = noteDao.updateCatalogId(null, noteId);
+        var updated = noteDao.updateCatalogIdForNote(null, noteId);
 
         //then
         assertTrue(updated);

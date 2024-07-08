@@ -111,7 +111,7 @@ public class JdbcNoteDao implements NoteDao {
     }
 
     @Override
-    public boolean updateCatalogId(Integer catalogId, Integer forNoteId) {
+    public boolean updateCatalogIdForNote(Integer catalogId, Integer forNoteId) {
         var sql = """
                 UPDATE note
                 SET catalog_id = ?
