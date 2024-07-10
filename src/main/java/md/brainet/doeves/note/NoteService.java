@@ -10,5 +10,5 @@ public interface NoteService {
     void removeNote(Integer noteId);
     Note fetchNote(Integer noteId);
     void changeCatalog(Integer noteId, Integer catalogId);
-    List<Note> fetchAllOwnerNote(LimitedListNoteRequest request);
+    List<Note> fetchAllOwnerNote(Integer ownerId, LimitedListNoteRequest request);
 }

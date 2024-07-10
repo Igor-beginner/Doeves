@@ -83,7 +83,11 @@ class NoteDaoTest extends IntegrationTestBase {
         final int orderNumber = 10;
 
         //when
-        var updated = noteDao.updateOrderNumberByNoteId(noteId, orderNumber);
+        var updated = noteDao.updateOrderNumberByNoteId(new NoteOrderingRequest(
+                noteId,
+                1,
+                orderNumber
+        ));
 
         //then
         assertTrue(updated);
@@ -98,7 +102,11 @@ class NoteDaoTest extends IntegrationTestBase {
         final int orderNumber = 0;
 
         //when
-        var updated = noteDao.updateOrderNumberByNoteId(noteId, orderNumber);
+        var updated = noteDao.updateOrderNumberByNoteId(new NoteOrderingRequest(
+                noteId,
+                null,
+                orderNumber
+        ));
 
         //then
         assertFalse(updated);
@@ -111,7 +119,11 @@ class NoteDaoTest extends IntegrationTestBase {
         final int orderNumber = 2;
 
         //when
-        var updated = noteDao.updateOrderNumberByNoteId(noteId, orderNumber);
+        var updated = noteDao.updateOrderNumberByNoteId(new NoteOrderingRequest(
+                noteId,
+                1,
+                orderNumber
+        ));
 
         //then
         assertTrue(updated);

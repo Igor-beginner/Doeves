@@ -32,7 +32,7 @@ class CatalogServiceTest extends IntegrationTestBase {
         var catalog = catalogService.createCatalog(2, payload);
 
         //then
-        var catalogs = catalogDao.selectAllCatalogsByOwnerId(payload.ownerId(), 0, 10);
+        var catalogs = catalogDao.selectAllCatalogsByOwnerId(2, 0, 10);
         assertEquals(1, catalogs.size());
         assertEquals(catalog.id(), catalogs.get(0).id());
     }

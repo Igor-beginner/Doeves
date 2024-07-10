@@ -238,14 +238,13 @@ class NoteServiceTest extends IntegrationTestBase {
         //given
         final int userId = 1;
         var request = new LimitedListNoteRequest(
-                userId,
                 0,
                 10,
                 true
         );
 
         //when
-        var notes = noteService.fetchAllOwnerNote(request);
+        var notes = noteService.fetchAllOwnerNote(userId, request);
 
         //then
         assertEquals(3, notes.size());
@@ -256,14 +255,13 @@ class NoteServiceTest extends IntegrationTestBase {
         //given
         final int userId = 1;
         var request = new LimitedListNoteRequest(
-                userId,
                 0,
                 10,
                 false
         );
 
         //when
-        var notes = noteService.fetchAllOwnerNote(request);
+        var notes = noteService.fetchAllOwnerNote(userId, request);
 
         //then
         assertEquals(1, notes.size());

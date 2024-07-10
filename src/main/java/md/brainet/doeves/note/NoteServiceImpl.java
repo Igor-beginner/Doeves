@@ -33,6 +33,7 @@ public class NoteServiceImpl implements NoteService {
 
     @Override
     public void changeOrderNumber(Integer noteId, Integer orderNumber) {
+        //todo we need somehow to get catalogID
         boolean updated = noteDao.updateOrderNumberByNoteId(noteId, orderNumber);
         if(!updated) {
             throw new NoteNotFoundException(noteId);
@@ -78,17 +79,17 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
-    public List<Note> fetchAllOwnerNote(LimitedListNoteRequest request) {
+    public List<Note> fetchAllOwnerNote(Integer ownerId, LimitedListNoteRequest request) {
         List<Note> notes;
         if (request.includingCatalogs()) {
             notes = noteDao.selectAllNotesByOwnerIdIncludingCatalogs(
-                    request.ownerId(),
+                    ownerId,
                     request.offset(),
                     request.limit()
             );
         } else {
             notes = noteDao.selectAllNotesByOwnerIdWithoutCatalogs(
-                    request.ownerId(),
+                    ownerId,
                     request.offset(),
                     request.limit()
             );

@@ -13,13 +13,16 @@ public class JdbcNoteDao implements NoteDao {
     private final JdbcTemplate jdbcTemplate;
     private final NoteResultSetMapper noteMapper;
     private final NoteListResultSetMapper noteListMapper;
+    private final NotePreviewListResultSetMapper notePreviewListMapper;
 
     public JdbcNoteDao(JdbcTemplate jdbcTemplate,
                        NoteResultSetMapper noteMapper,
-                       NoteListResultSetMapper noteListMapper) {
+                       NoteListResultSetMapper noteListMapper,
+                       NotePreviewListResultSetMapper notePreviewListMapper) {
         this.jdbcTemplate = jdbcTemplate;
         this.noteMapper = noteMapper;
         this.noteListMapper = noteListMapper;
+        this.notePreviewListMapper = notePreviewListMapper;
     }
 
     @Override
@@ -45,11 +48,13 @@ public class JdbcNoteDao implements NoteDao {
 
     @Override
     @Transactional
-    public boolean updateOrderNumberByNoteId(Integer noteId, Integer orderNumber) {
+    public boolean updateOrderNumberByNoteId(NoteOrderingRequest request) {
+        //todo need to add conditional with catalog
         var sqlUpdateOrderNumberForAllAfterUpdated = """
                 UPDATE note
                 SET order_number = order_number + 1
-                WHERE order_number >= ?;
+                WHERE order_number >= ?
+                AND catalog_id = ?;
                 """;
 
         var sqlUpdateOrderNumber = """
@@ -58,9 +63,9 @@ public class JdbcNoteDao implements NoteDao {
                 WHERE id = ?;
                 """;
 
-        jdbcTemplate.update(sqlUpdateOrderNumberForAllAfterUpdated, orderNumber);
+        jdbcTemplate.update(sqlUpdateOrderNumberForAllAfterUpdated, request.orderNumber(), request.catalogId());
 
-        return jdbcTemplate.update(sqlUpdateOrderNumber, orderNumber, noteId) > 0;
+        return jdbcTemplate.update(sqlUpdateOrderNumber, request.orderNumber(), request.noteId()) > 0;
     }
 
     @Override
@@ -122,31 +127,67 @@ public class JdbcNoteDao implements NoteDao {
     }
 
     @Override
-    public List<Note> selectAllNotesByOwnerIdIncludingCatalogs(Integer ownerId, Integer offset, Integer limit) {
+    public List<NotePreview> selectAllNotesByOwnerIdIncludingCatalogs(Integer ownerId, Integer offset, Integer limit) {
         var sql = """
-                SELECT *
-                FROM note
-                WHERE owner_id = ?
-                ORDER BY order_number
+                SELECT 
+                    n.id n_id,
+                    n.title n_title,
+                    n.description n_description,
+                    n.date_of_create n_date_of_create,
+                    c.id c_id,
+                    c.title c_title,
+                    n.catalog_id n_catalog_id,
+                    no.order_number no_order_number
+                FROM note n
+                INNER JOIN catalog c
+                ON n.catalog_id = c.id
+                INNER JOIN note_oreder no
+                ON no.note_id = n.id
+                WHERE n.owner_id = ?
+                AND no.context = ?
+                ORDER BY no.order_number
                 OFFSET ?
                 LIMIT ?;
                 """;
 
-        return jdbcTemplate.query(sql, noteListMapper, ownerId, offset, limit);
+        return jdbcTemplate.query(
+                sql,
+                notePreviewListMapper,
+                ownerId,
+                ViewContext.HOME_PAGE,
+                offset,
+                limit
+        );
     }
 
     @Override
-    public List<Note> selectAllNotesByOwnerIdWithoutCatalogs(Integer ownerId, Integer offset, Integer limit) {
+    public List<NotePreview> selectAllNotesByOwnerIdWithoutCatalogs(Integer ownerId, Integer offset, Integer limit) {
         var sql = """
-                SELECT *
-                FROM note
-                WHERE owner_id = ?
-                AND catalog_id IS NULL
-                ORDER BY order_number
+                SELECT 
+                    n.id n_id,
+                    n.title n_title,
+                    n.description n_description,
+                    n.date_of_create n_date_of_create,
+                    n.catalog_id n_catalog_id,
+                    no.order_number no_order_number
+                FROM note n
+                INNER JOIN note_oreder no
+                ON no.note_id = n.id
+                WHERE n.owner_id = ?
+                AND no.context = ?
+                AND n.catalog_id IS NULL
+                ORDER BY no.order_number
                 OFFSET ?
                 LIMIT ?;
                 """;
 
-        return jdbcTemplate.query(sql, noteListMapper, ownerId, offset, limit);
+        return jdbcTemplate.query(
+                sql,
+                notePreviewListMapper,
+                ownerId,
+                ViewContext.HOME_PAGE,
+                offset,
+                limit
+        );
     }
 }

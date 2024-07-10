@@ -59,14 +59,14 @@ public class CatalogController {
 
         Catalog catalog = catalogService.createCatalog(user.getId(), catalogDTO);
         LOG.info("Catalog [id={}] was created by [email={}]", user.getId(), user.getEmail());
-        return new ResponseEntity<>(catalog, HttpStatus.OK);
+        return new ResponseEntity<>(catalog, HttpStatus.CREATED);
     }
 
     @PatchMapping("{id}/order")
     public ResponseEntity<?> changeCatalogOrder(
             @AuthenticationPrincipal User user,
             @PathVariable("id") Integer catalogId,
-            @RequestParam("num")Integer orderNumber
+            @RequestParam("v")Integer orderNumber
             ) {
 
         catalogService.changeOrderNumber(catalogId, orderNumber);
@@ -75,19 +75,19 @@ public class CatalogController {
                 catalogId,
                 orderNumber
         );
-        return new ResponseEntity<>(HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.ACCEPTED);
     }
 
     @PatchMapping("{id}/name")
     public ResponseEntity<?> changeName(
             @AuthenticationPrincipal User user,
             @PathVariable("id") Integer catalogId,
-            @RequestParam("value") String newName
+            @RequestParam("v") String newName
     ) {
 
         catalogService.changeName(catalogId, newName);
         LOG.info("User [email={}] changed catalog [id={}] name on '{}'", user.getEmail(), catalogId, newName);
-        return new ResponseEntity<>(HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.ACCEPTED);
     }
 
 
