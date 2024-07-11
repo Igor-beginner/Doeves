@@ -81,22 +81,45 @@ public class JdbcCatalogDao implements CatalogDao{
 
     @Override
     @Transactional
-    public boolean updateOrderNumberByCatalogId(Integer catalogId, Integer orderNumber) {
+    public boolean updateOrderNumberByCatalogId(CatalogOrderingRequest request) {
+        var shiftInFront = request.newOrderNumber() > request.currentOrderNumber();
+        var conditionalToShift = shiftInFront
+                ? "> ?"
+                : "BETWEEN ? + 1 AND ? - 1";
+
         var sqlUpdateOrderNumberForAllAfterUpdated = """
                 UPDATE catalog
                 SET order_number = order_number + 1
-                WHERE order_number >= ?;
-                """;
+                WHERE order_number %s
+                AND owner_id = ?;
+                """.formatted(conditionalToShift);
 
         var sqlUpdateOrderNumber = """
-                UPDATE catalog 
-                SET order_number = ?
+                UPDATE catalog
+                SET order_number = ? + 1
                 WHERE id = ?;
                 """;
 
-        jdbcTemplate.update(sqlUpdateOrderNumberForAllAfterUpdated, orderNumber);
+        if(shiftInFront) {
+            jdbcTemplate.update(
+                    sqlUpdateOrderNumberForAllAfterUpdated,
+                    request.newOrderNumber()
+            );
+        } else {
+            jdbcTemplate.update(
+                    sqlUpdateOrderNumberForAllAfterUpdated,
+                    request.newOrderNumber(),
+                    request.currentOrderNumber()
+            );
+        }
 
-        return jdbcTemplate.update(sqlUpdateOrderNumber, orderNumber, catalogId) > 0;
+
+
+        return jdbcTemplate.update(
+                sqlUpdateOrderNumber,
+                request.newOrderNumber(),
+                request.catalogId()
+        ) > 0;
     }
 
     @Override

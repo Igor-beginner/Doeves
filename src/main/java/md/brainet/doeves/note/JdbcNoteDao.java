@@ -103,7 +103,7 @@ public class JdbcNoteDao implements NoteDao {
     public boolean updateOrderNumberByNoteId(NoteOrderingRequest request) {
         var shiftInFront = request.newOrderNumber() > request.currentOrderNumber();
         var conditionalToShift = shiftInFront
-                ? ">= ?"
+                ? "> ?"
                 : "BETWEEN ? + 1 AND ? - 1";
 
         var sqlShifting = """
@@ -138,7 +138,7 @@ public class JdbcNoteDao implements NoteDao {
 
         var sqlUpdating = """
                 UPDATE note_order
-                SET order_number = ?
+                SET order_number = ? + 1
                 WHERE note_id = ?
                 AND context = ?
                 """;

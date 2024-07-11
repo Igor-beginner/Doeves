@@ -40,11 +40,24 @@ public class CatalogServiceImpl implements CatalogService {
     }
 
     @Override
-    public void changeOrderNumber(Integer catalogId, Integer newOrderNumber) {
-        boolean updated = catalogDao.updateOrderNumberByCatalogId(catalogId, newOrderNumber);
+    public Integer changeOrderNumber(Integer editingCatalogId, Integer backCatalogId) {
+        //todo fetch two catalogs
+        var editingCatalog = findCatalog(editingCatalogId);
+        var backCatalogOrderNumber = backCatalogId == null
+                ? 0
+                : findCatalog(backCatalogId).orderNumber();
+
+        boolean updated = catalogDao.updateOrderNumberByCatalogId(
+                new CatalogOrderingRequest(
+                        editingCatalogId,
+                        editingCatalog.orderNumber(),
+                        backCatalogOrderNumber
+                )
+        );
         if(!updated) {
-            throw new CatalogNotFoundException(catalogId);
+            //todo throw nothingToUpdate
         }
+        return backCatalogOrderNumber;
     }
 
     @Override

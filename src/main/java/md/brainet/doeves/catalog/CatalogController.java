@@ -62,18 +62,18 @@ public class CatalogController {
         return new ResponseEntity<>(catalog, HttpStatus.CREATED);
     }
 
-    @PatchMapping("{id}/order")
+    @PatchMapping("{editingNoteId}/order-after/{backNoteId}")
     public ResponseEntity<?> changeCatalogOrder(
             @AuthenticationPrincipal User user,
-            @PathVariable("id") Integer catalogId,
-            @RequestParam("v")Integer orderNumber
+            @PathVariable("editingNoteId") Integer editingNoteId,
+            @RequestParam("backNoteId")Integer backNoteId
             ) {
 
-        catalogService.changeOrderNumber(catalogId, orderNumber);
-        LOG.info("User [id={}] changed catalog [id={}] order number on {}",
-                user.getId(),
-                catalogId,
-                orderNumber
+        Integer newOrderNumber = catalogService.changeOrderNumber(editingNoteId, backNoteId);
+        LOG.info("User [email={}] changed catalog [id={}] order number on {}",
+                user.getEmail(),
+                editingNoteId,
+                newOrderNumber
         );
         return new ResponseEntity<>(HttpStatus.ACCEPTED);
     }

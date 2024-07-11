@@ -37,16 +37,20 @@ public class NoteServiceImpl implements NoteService {
     public void changeOrderNumber(Integer editingNoteId, Integer frontNoteId, ViewContext context) {
 
         Note editingNote = fetchNote(editingNoteId);
-        Note frontNote = fetchNote(frontNoteId);
 
         if(editingNote.catalogId() == null && context == ViewContext.CATALOG) {
             //todo throw NoteDoesNotHaveCatalogException
         }
+
+        Integer frontNoteOrderNumber = frontNoteId == null
+                ? 0
+                : fetchNote(frontNoteId).orderNumber();
+
         boolean updated = noteDao.updateOrderNumberByNoteId(
                 new NoteOrderingRequest(
                         editingNoteId,
                         editingNote.orderNumber(),
-                        frontNote.orderNumber(),
+                        frontNoteOrderNumber,
                         context,
                         context.getContextId(editingNote)
                 )
