@@ -3,6 +3,7 @@ package md.brainet.doeves.note;
 import md.brainet.doeves.exception.NoteNotFoundException;
 import md.brainet.doeves.exception.UserNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
@@ -32,11 +33,27 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
-    public void changeOrderNumber(Integer noteId, Integer orderNumber) {
-        //todo we need somehow to get catalogID
-        boolean updated = noteDao.updateOrderNumberByNoteId(noteId, orderNumber);
+    @Transactional
+    public void changeOrderNumber(Integer editingNoteId, Integer frontNoteId, ViewContext context) {
+
+        Note editingNote = fetchNote(editingNoteId);
+        Note frontNote = fetchNote(frontNoteId);
+
+        if(editingNote.catalogId() == null && context == ViewContext.CATALOG) {
+            //todo throw NoteDoesNotHaveCatalogException
+        }
+        boolean updated = noteDao.updateOrderNumberByNoteId(
+                new NoteOrderingRequest(
+                        editingNoteId,
+                        editingNote.orderNumber(),
+                        frontNote.orderNumber(),
+                        context,
+                        context.getContextId(editingNote)
+                )
+        );
+
         if(!updated) {
-            throw new NoteNotFoundException(noteId);
+            //todo NothingToUpdateException
         }
     }
 
@@ -79,8 +96,8 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
-    public List<Note> fetchAllOwnerNote(Integer ownerId, LimitedListNoteRequest request) {
-        List<Note> notes;
+    public List<NotePreview> fetchAllOwnerNote(Integer ownerId, LimitedListNoteRequest request) {
+        List<NotePreview> notes;
         if (request.includingCatalogs()) {
             notes = noteDao.selectAllNotesByOwnerIdIncludingCatalogs(
                     ownerId,

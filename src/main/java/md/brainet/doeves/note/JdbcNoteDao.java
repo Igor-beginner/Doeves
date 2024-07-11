@@ -4,6 +4,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.EmptyStackException;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,46 +28,127 @@ public class JdbcNoteDao implements NoteDao {
     }
 
     @Override
+    @Transactional
     public Optional<Note> insertNote(Integer ownerId, NoteDTO noteDTO) {
+
         var sql = """
-                INSERT INTO note(title, description, catalog_id, order_number, owner_id)
-                VALUES(?, ?, ?, ?, ?)
+                INSERT INTO note(title, description, catalog_id, owner_id)
+                VALUES(?, ?, ?, ?)
                 RETURNING *;
                 """;
 
-        return Optional.ofNullable(
+        var note = Optional.ofNullable(
                 jdbcTemplate.query(
                         sql,
                         noteMapper,
                         noteDTO.name(),
                         noteDTO.description(),
                         noteDTO.catalogId(),
-                        noteDTO.orderNumber(),
                         ownerId
                 )
         );
+
+        if(note.isEmpty()) {
+            return note;
+        }
+
+        Note concreteNote = note.get();
+
+        int noteId = concreteNote.id();
+
+        var sqlShifting = """
+                UPDATE note_order
+                SET order_number = order_number + 1
+                WHERE context_id = ?
+                """;
+
+        var sqlOrdering = """
+                INSERT INTO note_order(
+                    note_id,
+                    context,
+                    order_number
+                ) VALUES (?, ?, ?);
+                """;
+
+        if(noteDTO.catalogId() != null) {
+            jdbcTemplate.update(
+                    sqlShifting,
+                    ViewContext.CATALOG.getContextId(concreteNote)
+            );
+
+            jdbcTemplate.update(
+                    sqlOrdering,
+                    noteId,
+                    ViewContext.CATALOG,
+                    0
+            );
+        }
+
+        jdbcTemplate.update(
+                sqlShifting,
+                ViewContext.HOME_PAGE.getContextId(concreteNote)
+        );
+
+        jdbcTemplate.update(
+                sqlOrdering,
+                noteId,
+                ViewContext.HOME_PAGE,
+                0
+        );
+        return note;
     }
 
     @Override
     @Transactional
     public boolean updateOrderNumberByNoteId(NoteOrderingRequest request) {
-        //todo need to add conditional with catalog
-        var sqlUpdateOrderNumberForAllAfterUpdated = """
-                UPDATE note
+        var shiftInFront = request.newOrderNumber() > request.currentOrderNumber();
+        var conditionalToShift = shiftInFront
+                ? ">= ?"
+                : "BETWEEN ? + 1 AND ? - 1";
+
+        var sqlShifting = """
+                UPDATE note_order
                 SET order_number = order_number + 1
-                WHERE order_number >= ?
-                AND catalog_id = ?;
-                """;
+                WHERE order_number %s
+                AND note_id = ?
+                AND context = ?
+                AND context_id = ?
+                """.formatted(conditionalToShift);
 
-        var sqlUpdateOrderNumber = """
-                UPDATE note
+        boolean shiftUpdated;
+
+        if(shiftInFront) {
+            shiftUpdated = jdbcTemplate.update(
+                    sqlShifting,
+                    request.newOrderNumber(),
+                    request.noteId(),
+                    request.context(),
+                    request.contextId()
+            ) > 0;
+        } else {
+            shiftUpdated = jdbcTemplate.update(
+                    sqlShifting,
+                    request.newOrderNumber(),
+                    request.currentOrderNumber(),
+                    request.noteId(),
+                    request.context(),
+                    request.contextId()
+            ) > 0;
+        }
+
+        var sqlUpdating = """
+                UPDATE note_order
                 SET order_number = ?
-                WHERE id = ?;
+                WHERE note_id = ?
+                AND context = ?
                 """;
 
-        jdbcTemplate.update(sqlUpdateOrderNumberForAllAfterUpdated, request.orderNumber(), request.catalogId());
-
-        return jdbcTemplate.update(sqlUpdateOrderNumber, request.orderNumber(), request.noteId()) > 0;
+        return jdbcTemplate.update(
+                sqlUpdating,
+                request.newOrderNumber(),
+                request.noteId(),
+                request.context()
+        ) > 0 && shiftUpdated;
     }
 
     @Override
@@ -149,7 +232,7 @@ public class JdbcNoteDao implements NoteDao {
                 OFFSET ?
                 LIMIT ?;
                 """;
-
+        //todo insert context_id
         return jdbcTemplate.query(
                 sql,
                 notePreviewListMapper,

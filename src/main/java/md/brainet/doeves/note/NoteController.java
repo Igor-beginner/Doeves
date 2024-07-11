@@ -34,6 +34,7 @@ public class NoteController {
     @GetMapping("all")
     public ResponseEntity<?> fetchAllOwnerNote(
             @AuthenticationPrincipal User user,
+            //todo extract to request param
             LimitedListNoteRequest request
     ) {
 
@@ -52,18 +53,20 @@ public class NoteController {
         return new ResponseEntity<>(note, HttpStatus.CREATED);
     }
 
-    @PatchMapping("{id}/order")
+    @PatchMapping("{editingNoteId}/order-after/{backNoteId}")
     public ResponseEntity<?> changeNoteOrder(
             @AuthenticationPrincipal User user,
-            @PathVariable("id") Integer noteId,
-            @RequestParam("v")Integer orderNumber
+            @PathVariable("editingNoteId") Integer editingNoteId,
+            @RequestParam("backNoteId")Integer backNoteId,
+            @RequestParam("view") ViewContext viewContext
     ) {
 
-        noteService.changeOrderNumber(noteId, orderNumber);
-        LOG.info("User [id={}] changed note [id={}] order number on {}",
-                user.getId(),
-                noteId,
-                orderNumber
+        noteService.changeOrderNumber(editingNoteId, backNoteId, viewContext);
+        LOG.info("User [email={}] moved note [editingNoteId={}] after [frontNoteId={}] within {}",
+                user.getEmail(),
+                editingNoteId,
+                backNoteId,
+                viewContext.toString().toUpperCase()
         );
         return new ResponseEntity<>(HttpStatus.ACCEPTED);
     }

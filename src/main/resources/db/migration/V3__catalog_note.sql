@@ -24,6 +24,7 @@ CREATE TYPE context_enum AS ENUM ('home_page', 'catalog');
 CREATE TABLE note_order(
     note_id INTEGER REFERENCES note(id) ON DELETE CASCADE NOT NULL,
     context context_enum NOT NULL,
-    order_number INTEGER,
-    PRIMARY KEY(note_id, context)
+    context_id INTEGER NOT NULL,
+    order_number INTEGER NOT NULL,
+    PRIMARY KEY(note_id, context, context_id)
 );
