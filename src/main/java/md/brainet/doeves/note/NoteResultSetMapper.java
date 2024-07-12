@@ -18,7 +18,6 @@ public class NoteResultSetMapper implements ResultSetExtractor<Note> {
                 rs.getString("description"),
                 rs.getTimestamp("date_of_create").toLocalDateTime(),
                 (Integer) rs.getObject("catalog_id"),
-                rs.getInt("order_number"),
                 rs.getInt("owner_id")
         ) : null;
     }

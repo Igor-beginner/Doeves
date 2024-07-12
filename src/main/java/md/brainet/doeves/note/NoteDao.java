@@ -10,6 +10,7 @@ public interface NoteDao {
     boolean updateDescriptionByNoteId(Integer noteId, String noteDescription);
     boolean removeByNoteId(Integer noteId);
     Optional<Note> selectByNoteId(Integer noteId);
+    Optional<Integer> selectOrderNumberByNoteIdAndContext(Integer noteId, ViewContext viewContext);
     boolean updateCatalogIdForNote(Integer catalogId, Integer forNoteId);
     List<NotePreview> selectAllNotesByOwnerIdIncludingCatalogs(Integer ownerId, Integer offset, Integer limit);
     List<NotePreview> selectAllNotesByOwnerIdWithoutCatalogs(Integer ownerId, Integer offset, Integer limit);

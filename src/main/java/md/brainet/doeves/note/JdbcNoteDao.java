@@ -199,6 +199,25 @@ public class JdbcNoteDao implements NoteDao {
     }
 
     @Override
+    public Optional<Integer> selectOrderNumberByNoteIdAndContext(Integer noteId, ViewContext viewContext) {
+        var sql = """
+                SELECT no.order_number
+                FROM note_order no
+                INNER JOIN note n
+                ON n.id = no.note_id
+                WHERE note_id = ?
+                AND context = ?::context_enum
+                LIMIT 1;
+                """;
+        return Optional.ofNullable(jdbcTemplate.queryForObject(
+                sql,
+                Integer.class,
+                noteId,
+                viewContext)
+        );
+    }
+
+    @Override
     public boolean updateCatalogIdForNote(Integer catalogId, Integer forNoteId) {
         var sql = """
                 UPDATE note

@@ -21,7 +21,7 @@ class NoteServiceTest extends IntegrationTestBase {
     CatalogDao catalogDao;
 
     @Autowired
-    NoteService noteService;
+    NoteServiceImpl noteService;
 
     @Test
     void createNote_orderNumberPresent_expectOffsetNextItems() {
@@ -59,7 +59,10 @@ class NoteServiceTest extends IntegrationTestBase {
         var note = noteService.createNote(ownerId, noteDTO);
 
         //then
-        assertEquals(expectedAssigningOrderNumber, note.orderNumber());
+        assertEquals(
+                expectedAssigningOrderNumber,
+                noteService.fetchOrderNumber(note.id(), ViewContext.CATALOG)
+        );
     }
 
     @Test

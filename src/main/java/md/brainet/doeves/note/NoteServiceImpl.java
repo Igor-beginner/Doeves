@@ -44,12 +44,12 @@ public class NoteServiceImpl implements NoteService {
 
         Integer frontNoteOrderNumber = frontNoteId == null
                 ? 0
-                : fetchNote(frontNoteId).orderNumber();
+                : fetchOrderNumber(frontNoteId, context);
 
         boolean updated = noteDao.updateOrderNumberByNoteId(
                 new NoteOrderingRequest(
                         editingNoteId,
-                        editingNote.orderNumber(),
+                        fetchOrderNumber(editingNoteId, context),
                         frontNoteOrderNumber,
                         context,
                         context.getContextId(editingNote)
@@ -59,6 +59,12 @@ public class NoteServiceImpl implements NoteService {
         if(!updated) {
             //todo NothingToUpdateException
         }
+    }
+
+
+    public int fetchOrderNumber(Integer noteId, ViewContext context) {
+        return noteDao.selectOrderNumberByNoteIdAndContext(noteId, context)
+                .orElseThrow(() -> new NoteNotFoundException(noteId));
     }
 
     @Override
