@@ -43,7 +43,7 @@ class CatalogDaoTest extends IntegrationTestBase {
     @Test
     void insertCatalog() {
         //given
-        final int expectedId = 3;
+        final int expectedId = 8;
 
         var catalog = new CatalogDTO(
                 "My First Catalog",
@@ -61,7 +61,7 @@ class CatalogDaoTest extends IntegrationTestBase {
     void selectAllCatalogsByOwnerId() {
         //given
         final int ownerId = 1;
-        final int expectedCountOfData = 2;
+        final int expectedCountOfData = 7;
 
         //when
         var catalogs = catalogDao.selectAllCatalogsByOwnerId(ownerId,0,10);
@@ -71,35 +71,90 @@ class CatalogDaoTest extends IntegrationTestBase {
     }
 
     @Test
-    void updateOrderNumberByCatalogId_numberIsNotBusy_expectTrue() {
+    void updateOrderNumberByCatalogId_insertInRight() {
         //given
-        final int baseCatalogId = 1;
-        final int newOrderNum = 3;
+        final var request = new CatalogOrderingRequest(
+                3,
+                2,
+                4,
+                1
+        );
+        final var checkedCatalogId = 6;
+        final var expectedNumberOrderCatalog = 6;
+
 
         //when
-        var updated = catalogDao.updateOrderNumberByCatalogId(baseCatalogId, newOrderNum);
+        var updated = catalogDao.updateOrderNumberByCatalogId(request);
 
         //then
         assertTrue(updated);
-        var catalog = catalogDao.selectCatalogById(baseCatalogId);
-        assertEquals(baseCatalogId, catalog.get().id());
+        var catalog = catalogDao.selectCatalogById(request.catalogId());
+        assertEquals(request.newOrderNumber() + 1, catalog.get().orderNumber());
+        var shiftedCatalog = catalogDao.selectCatalogById(checkedCatalogId);
+        assertEquals(expectedNumberOrderCatalog, shiftedCatalog.get().orderNumber());
     }
 
     @Test
-    void updateOrderNumberByCatalogId_numberIsBusy_expectFalse() {
+    void updateOrderNumberByCatalogId_insertInLeft() {
         //given
-        final int baseCatalogId = 1;
-        final int newOrderNum = 0;
+        final var request = new CatalogOrderingRequest(
+                5,
+                4,
+                1,
+                1
+        );
+        final var checkedCatalogId = 3;
+        final var expectedNumberOrderCatalog = 3;
+
+        final var checkedKeptCatalogId = 6;
+        final var expectedKeptNumberOrderCatalog = 5;
+
 
         //when
-        var updated = catalogDao.updateOrderNumberByCatalogId(baseCatalogId, newOrderNum);
+        var updated = catalogDao.updateOrderNumberByCatalogId(request);
 
         //then
         assertTrue(updated);
-        var catalog = catalogDao.selectCatalogById(2);
-        assertEquals(newOrderNum + 1, catalog.get().orderNumber());
-        catalog = catalogDao.selectCatalogById(baseCatalogId);
-        assertEquals(newOrderNum, catalog.get().orderNumber());
+        var catalog = catalogDao.selectCatalogById(request.catalogId());
+        assertEquals(request.newOrderNumber() + 1, catalog.get().orderNumber());
+        var shiftedCatalog = catalogDao.selectCatalogById(checkedCatalogId);
+        assertEquals(expectedNumberOrderCatalog, shiftedCatalog.get().orderNumber());
+        var noteShiftedCatalog = catalogDao.selectCatalogById(checkedKeptCatalogId);
+        assertEquals(expectedKeptNumberOrderCatalog, noteShiftedCatalog.get().orderNumber());
+    }
+
+    @Test
+    void updateOrderNumberByCatalogId_numberIsSame_expectFalse() {
+        //given
+        final var request = new CatalogOrderingRequest(
+                5,
+                4,
+                4,
+                1
+        );
+
+        //when
+        var updated = catalogDao.updateOrderNumberByCatalogId(request);
+
+        //then
+        assertFalse(updated);
+    }
+
+    @Test
+    void updateOrderNumberByCatalogId_valuesIsIncorrect_expectFalse() {
+        //given
+        final var request = new CatalogOrderingRequest(
+                2315,
+                4321,
+                4321,
+                11323
+        );
+
+        //when
+        var updated = catalogDao.updateOrderNumberByCatalogId(request);
+
+        //then
+        assertFalse(updated);
     }
 
     @Test

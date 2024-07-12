@@ -38,7 +38,7 @@ public class NoteController {
             LimitedListNoteRequest request
     ) {
 
-        List<Note> notes = noteService.fetchAllOwnerNote(user.getId(), request);
+        List<NotePreview> notes = noteService.fetchAllOwnerNote(user.getId(), request);
         LOG.info("User [email={}] fetched all tasks [includingCatalogs={}]", user.getEmail(), request.includingCatalogs());
         return new ResponseEntity<>(notes, HttpStatus.OK);
     }

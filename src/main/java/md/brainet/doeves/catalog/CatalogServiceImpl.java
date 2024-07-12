@@ -51,7 +51,8 @@ public class CatalogServiceImpl implements CatalogService {
                 new CatalogOrderingRequest(
                         editingCatalogId,
                         editingCatalog.orderNumber(),
-                        backCatalogOrderNumber
+                        backCatalogOrderNumber,
+                        editingCatalog.ownerId()
                 )
         );
         if(!updated) {

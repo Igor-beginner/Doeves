@@ -2,6 +2,7 @@ package md.brainet.doeves.catalog;
 
 import md.brainet.doeves.note.Note;
 import md.brainet.doeves.note.NoteListResultSetMapper;
+import md.brainet.doeves.note.ViewContext;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -100,26 +101,30 @@ public class JdbcCatalogDao implements CatalogDao{
                 WHERE id = ?;
                 """;
 
+        int updated;
+
         if(shiftInFront) {
-            jdbcTemplate.update(
-                    sqlUpdateOrderNumberForAllAfterUpdated,
-                    request.newOrderNumber()
-            );
-        } else {
-            jdbcTemplate.update(
+            updated = jdbcTemplate.update(
                     sqlUpdateOrderNumberForAllAfterUpdated,
                     request.newOrderNumber(),
-                    request.currentOrderNumber()
+                    request.ownerId()
+            );
+        } else {
+            updated = jdbcTemplate.update(
+                    sqlUpdateOrderNumberForAllAfterUpdated,
+                    request.newOrderNumber(),
+                    request.currentOrderNumber(),
+                    request.ownerId()
             );
         }
 
-
-
-        return jdbcTemplate.update(
+        jdbcTemplate.update(
                 sqlUpdateOrderNumber,
                 request.newOrderNumber(),
                 request.catalogId()
-        ) > 0;
+        );
+
+        return updated > 0;
     }
 
     @Override
@@ -145,13 +150,23 @@ public class JdbcCatalogDao implements CatalogDao{
     public List<Note> selectAllNotesByCatalogId(Integer catalogId, Integer offset, Integer limit) {
         var sql = """
                 SELECT *
-                FROM note
-                WHERE catalog_id = ?
-                ORDER BY order_number
+                FROM note n
+                INNER JOIN note_order no
+                ON n.id = no.note_id
+                WHERE n.catalog_id = ?
+                AND no.context = ?::context_enum
+                ORDER BY no.order_number
                 OFFSET ?
                 LIMIT ?;
                 """;
 
-        return jdbcTemplate.query(sql, noteListMapper, catalogId, offset, limit);
+        return jdbcTemplate.query(
+                sql,
+                noteListMapper,
+                catalogId,
+                ViewContext.CATALOG.toString(),
+                offset,
+                limit
+        );
     }
 }

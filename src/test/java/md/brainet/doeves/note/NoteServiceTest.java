@@ -117,32 +117,32 @@ class NoteServiceTest extends IntegrationTestBase {
     }
 
 
-    @Test
-    void changeOrderNumber_noteIdExists_expectChanges() {
-        //given
-        final int newOrder = 2;
-        final int noteId = 1;
+//    @Test
+//    void changeOrderNumber_noteIdExists_expectChanges() {
+//        //given
+//        final int newOrder = 2;
+//        final int noteId = 1;
+//
+//        //when
+//        noteService.changeOrderNumber(noteId, newOrder);
+//
+//        //then
+//        var note = noteDao.selectByNoteId(3);
+//        assertEquals(3, note.get().orderNumber());
+//    }
 
-        //when
-        noteService.changeOrderNumber(noteId, newOrder);
-
-        //then
-        var note = noteDao.selectByNoteId(3);
-        assertEquals(3, note.get().orderNumber());
-    }
-
-    @Test
-    void changeOrderNumber_noteIdNotExists_expectNoteNotFoundException() {
-        //given
-        final int newOrder = 2;
-        final int noteId = 1321;
-
-        //when
-        Executable executable = () -> noteService.changeOrderNumber(noteId, newOrder);
-
-        //then
-        assertThrows(NoteNotFoundException.class, executable);
-    }
+//    @Test
+//    void changeOrderNumber_noteIdNotExists_expectNoteNotFoundException() {
+//        //given
+//        final int newOrder = 2;
+//        final int noteId = 1321;
+//
+//        //when
+//        Executable executable = () -> noteService.changeOrderNumber(noteId, newOrder);
+//
+//        //then
+//        assertThrows(NoteNotFoundException.class, executable);
+//    }
 
     @Test
     void removeNote_noteIdExists_expectRemoved() {

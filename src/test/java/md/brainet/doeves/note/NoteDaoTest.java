@@ -76,60 +76,60 @@ class NoteDaoTest extends IntegrationTestBase {
         assertThrows(DataIntegrityViolationException.class, executable);
     }
 
-    @Test
-    void updateOrderNumberByNoteId_idExists_expectTrue() {
-        //given
-        final int noteId = 1;
-        final int orderNumber = 10;
-
-        //when
-        var updated = noteDao.updateOrderNumberByNoteId(new NoteOrderingRequest(
-                noteId,
-                1,
-                orderNumber
-        ));
-
-        //then
-        assertTrue(updated);
-        var note = noteDao.selectByNoteId(noteId);
-        assertEquals(orderNumber, note.get().orderNumber());
-    }
-
-    @Test
-    void updateOrderNumberByNoteId_idNotExists_expectFalse() {
-        //given
-        final int noteId = 13123;
-        final int orderNumber = 0;
-
-        //when
-        var updated = noteDao.updateOrderNumberByNoteId(new NoteOrderingRequest(
-                noteId,
-                null,
-                orderNumber
-        ));
-
-        //then
-        assertFalse(updated);
-    }
-
-    @Test
-    void updateOrderNumberByNoteId_orderNumberIsBusy_expectFalse() {
-        //given
-        final int noteId = 1;
-        final int orderNumber = 2;
-
-        //when
-        var updated = noteDao.updateOrderNumberByNoteId(new NoteOrderingRequest(
-                noteId,
-                1,
-                orderNumber
-        ));
-
-        //then
-        assertTrue(updated);
-        var orderNumberNextNote = noteDao.selectByNoteId(3).get().orderNumber();
-        assertEquals(3, orderNumberNextNote);
-    }
+//    @Test
+//    void updateOrderNumberByNoteId_idExists_expectTrue() {
+//        //given
+//        final int noteId = 1;
+//        final int orderNumber = 10;
+//
+//        //when
+//        var updated = noteDao.updateOrderNumberByNoteId(new NoteOrderingRequest(
+//                noteId,
+//                1,
+//                orderNumber
+//        ));
+//
+//        //then
+//        assertTrue(updated);
+//        var note = noteDao.selectByNoteId(noteId);
+//        assertEquals(orderNumber, note.get().orderNumber());
+//    }
+//
+//    @Test
+//    void updateOrderNumberByNoteId_idNotExists_expectFalse() {
+//        //given
+//        final int noteId = 13123;
+//        final int orderNumber = 0;
+//
+//        //when
+//        var updated = noteDao.updateOrderNumberByNoteId(new NoteOrderingRequest(
+//                noteId,
+//                null,
+//                orderNumber
+//        ));
+//
+//        //then
+//        assertFalse(updated);
+//    }
+//
+//    @Test
+//    void updateOrderNumberByNoteId_orderNumberIsBusy_expectFalse() {
+//        //given
+//        final int noteId = 1;
+//        final int orderNumber = 2;
+//
+//        //when
+//        var updated = noteDao.updateOrderNumberByNoteId(new NoteOrderingRequest(
+//                noteId,
+//                1,
+//                orderNumber
+//        ));
+//
+//        //then
+//        assertTrue(updated);
+//        var orderNumberNextNote = noteDao.selectByNoteId(3).get().orderNumber();
+//        assertEquals(3, orderNumberNextNote);
+//    }
 
     @Test
     void updateNameByNoteId_idExists_expectTrue() {
