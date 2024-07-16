@@ -16,6 +16,7 @@ public class User implements UserDetails {
     private boolean verified;
     private Integer verificationDetailsId;
     private Role role;
+    private Integer rootCatalogId;
 
     public Integer getId() {
         return id;
@@ -97,5 +98,9 @@ public class User implements UserDetails {
     @Override
     public boolean isEnabled() {
         return enabled;
+    }
+
+    public Integer getRootCatalogId() {
+        return rootCatalogId;
     }
 }

@@ -99,7 +99,7 @@ public class NoteServiceImpl implements NoteService {
 
     @Override
     public void changeCatalog(Integer noteId, Integer catalogId) {
-        boolean updated = noteDao.updateCatalogIdForNote(catalogId, noteId);
+        boolean updated = noteDao.moveNoteIdToNewCatalogId(catalogId, noteId);
         if(!updated) {
             throw new NoteNotFoundException(noteId);
         }

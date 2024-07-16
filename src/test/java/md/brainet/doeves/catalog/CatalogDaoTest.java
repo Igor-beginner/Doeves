@@ -217,8 +217,8 @@ class CatalogDaoTest extends IntegrationTestBase {
     @Test
     void selectAllNotesByCatalogId_idExists_expectTrue() {
         //given
-        final int catalogId = 2;
-        final int expectedNotesCount = 2;
+        final int catalogId = 1;
+        final int expectedNotesCount = 3;
 
 
         //when

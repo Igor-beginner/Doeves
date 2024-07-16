@@ -8,6 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 
+import java.util.HashMap;
+import java.util.stream.Collectors;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
@@ -76,60 +79,62 @@ class NoteDaoTest extends IntegrationTestBase {
         assertThrows(DataIntegrityViolationException.class, executable);
     }
 
+
+    @Test
+    void insertNote_orderNumberIsZero_expectThatRestNotesWasShifted() {
+        //given
+        final int catalogId = 2;
+        var noteDTO = new NoteDTO("SomeName", null, catalogId, 0);
+
+        var notesUntilInsert = new HashMap<>(
+                catalogDao.selectAllNotesByCatalogId(catalogId, 0, 10)
+                        .stream().collect(Collectors.toMap(
+                                Note::id,
+                                note -> noteDao.selectOrderNumberByNoteIdAndContext(
+                                note.id(),
+                                ViewContext.CATALOG
+                        ).get()
+                ))
+        );
+
+        //when
+        var note = noteDao.insertNote(1, noteDTO).get();
+
+        //then
+        assertEquals(
+                noteDTO.orderNumber(),
+                noteDao.selectOrderNumberByNoteIdAndContext(note.id(), ViewContext.CATALOG)
+                        .get()
+        );
+
+        notesUntilInsert.put(note.id(), noteDTO.orderNumber());
+
+        var notes = catalogDao.selectAllNotesByCatalogId(catalogId, 0, 10);
+        assertEquals(note.id(), notes.get(0).id());
+
+        notes.stream().skip(1).forEach(
+                n -> assertEquals(
+                        notesUntilInsert.get(n.id()) + 1,
+                        noteDao.selectOrderNumberByNoteIdAndContext(
+                                n.id(), ViewContext.CATALOG
+                        ).get()
+                )
+        );
+    }
+
 //    @Test
 //    void updateOrderNumberByNoteId_idExists_expectTrue() {
 //        //given
-//        final int noteId = 1;
-//        final int orderNumber = 10;
+//        final var request = new NoteOrderingRequest(
+//        );
 //
 //        //when
-//        var updated = noteDao.updateOrderNumberByNoteId(new NoteOrderingRequest(
-//                noteId,
-//                1,
-//                orderNumber
-//        ));
+//        var updated = noteDao.updateOrderNumberByNoteId(request);
 //
 //        //then
-//        assertTrue(updated);
-//        var note = noteDao.selectByNoteId(noteId);
-//        assertEquals(orderNumber, note.get().orderNumber());
+//
 //    }
-//
-//    @Test
-//    void updateOrderNumberByNoteId_idNotExists_expectFalse() {
-//        //given
-//        final int noteId = 13123;
-//        final int orderNumber = 0;
-//
-//        //when
-//        var updated = noteDao.updateOrderNumberByNoteId(new NoteOrderingRequest(
-//                noteId,
-//                null,
-//                orderNumber
-//        ));
-//
-//        //then
-//        assertFalse(updated);
-//    }
-//
-//    @Test
-//    void updateOrderNumberByNoteId_orderNumberIsBusy_expectFalse() {
-//        //given
-//        final int noteId = 1;
-//        final int orderNumber = 2;
-//
-//        //when
-//        var updated = noteDao.updateOrderNumberByNoteId(new NoteOrderingRequest(
-//                noteId,
-//                1,
-//                orderNumber
-//        ));
-//
-//        //then
-//        assertTrue(updated);
-//        var orderNumberNextNote = noteDao.selectByNoteId(3).get().orderNumber();
-//        assertEquals(3, orderNumberNextNote);
-//    }
+
 
     @Test
     void updateNameByNoteId_idExists_expectTrue() {
@@ -220,7 +225,7 @@ class NoteDaoTest extends IntegrationTestBase {
         final int noteId = 3;
 
         //when
-        var updated = noteDao.updateCatalogIdForNote(newCatalogId, noteId);
+        var updated = noteDao.moveNoteIdToNewCatalogId(newCatalogId, noteId);
 
         //then
         assertTrue(updated);
@@ -238,7 +243,7 @@ class NoteDaoTest extends IntegrationTestBase {
         final int noteId = 3;
 
         //when
-        Executable executable = () -> noteDao.updateCatalogIdForNote(newCatalogId, noteId);
+        Executable executable = () -> noteDao.moveNoteIdToNewCatalogId(newCatalogId, noteId);
 
         //then
         assertThrows(DataIntegrityViolationException.class, executable);
@@ -251,7 +256,7 @@ class NoteDaoTest extends IntegrationTestBase {
         final int noteId = 32;
 
         //when
-        var updated = noteDao.updateCatalogIdForNote(newCatalogId, noteId);
+        var updated = noteDao.moveNoteIdToNewCatalogId(newCatalogId, noteId);
 
         //then
         assertFalse(updated);
@@ -263,7 +268,7 @@ class NoteDaoTest extends IntegrationTestBase {
         final int noteId = 3;
 
         //when
-        var updated = noteDao.updateCatalogIdForNote(null, noteId);
+        var updated = noteDao.moveNoteIdToNewCatalogId(null, noteId);
 
         //then
         assertTrue(updated);

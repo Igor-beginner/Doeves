@@ -9,7 +9,6 @@ public record NotePreview(
         Integer id,
         String name,
         String description,
-        Integer orderNumber,
         CatalogPreview catalog,
         LocalDateTime dateOfCreate
 ) {

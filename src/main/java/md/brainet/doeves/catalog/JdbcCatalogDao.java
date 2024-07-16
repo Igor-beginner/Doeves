@@ -2,7 +2,6 @@ package md.brainet.doeves.catalog;
 
 import md.brainet.doeves.note.Note;
 import md.brainet.doeves.note.NoteListResultSetMapper;
-import md.brainet.doeves.note.ViewContext;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -149,13 +148,29 @@ public class JdbcCatalogDao implements CatalogDao{
     @Override
     public List<Note> selectAllNotesByCatalogId(Integer catalogId, Integer offset, Integer limit) {
         var sql = """
-                SELECT *
-                FROM note n
-                INNER JOIN note_order no
-                ON n.id = no.note_id
-                WHERE n.catalog_id = ?
-                AND no.context = ?::context_enum
-                ORDER BY no.order_number
+                WITH RECURSIVE notes_from_catalog_in_user_order AS (
+                  SELECT note_id, catalog_id, 0 as level
+                  FROM note_catalog_ordering
+                  WHERE prev_note_id IS NULL
+                  AND catalog_id = ?
+                  UNION
+                  SELECT nco.note_id, nco.catalog_id, nfciuo.level + 1 AS level
+                  FROM note_catalog_ordering nco
+                  JOIN notes_from_catalog_in_user_order nfciuo
+                  ON nfciuo.note_id = nco.prev_note_id
+                  AND nfciuo.catalog_id = nco.catalog_id
+                )
+                SELECT
+                    n.id,
+                    n.title,
+                    n.description,
+                    n.date_of_create,
+                    nfciuo.catalog_id,
+                    NULL owner_id
+                FROM notes_from_catalog_in_user_order nfciuo
+                JOIN note n
+                ON n.id = nfciuo.note_id
+                ORDER BY nfciuo.level
                 OFFSET ?
                 LIMIT ?;
                 """;
@@ -164,7 +179,6 @@ public class JdbcCatalogDao implements CatalogDao{
                 sql,
                 noteListMapper,
                 catalogId,
-                ViewContext.CATALOG.toString(),
                 offset,
                 limit
         );

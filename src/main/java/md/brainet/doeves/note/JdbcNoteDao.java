@@ -1,11 +1,10 @@
 package md.brainet.doeves.note;
 
+import md.brainet.doeves.user.User;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.EmptyStackException;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,11 +28,15 @@ public class JdbcNoteDao implements NoteDao {
 
     @Override
     @Transactional
-    public Optional<Note> insertNote(Integer ownerId, NoteDTO noteDTO) {
-
+    public Optional<Note> insertNote(User user, NoteDTO noteDTO) {
+        //todo inserting in note will processing like
+        // 1. insert note in Note table
+        // 2. insert note_id and catalog_id and prev_note_id in note_catalog_ordering
+        // 3. order_number will generate automaticly (SERIAL)
+        // 4. checking on catalog_id is null will performing in service class
         var sql = """
-                INSERT INTO note(title, description, catalog_id, owner_id)
-                VALUES(?, ?, ?, ?)
+                INSERT INTO note(title, description, catalog_id)
+                VALUES(?, ?, ?)
                 RETURNING *;
                 """;
 
@@ -44,7 +47,7 @@ public class JdbcNoteDao implements NoteDao {
                         noteDTO.name(),
                         noteDTO.description(),
                         noteDTO.catalogId(),
-                        ownerId
+                        user.getId()
                 )
         );
 
@@ -56,99 +59,17 @@ public class JdbcNoteDao implements NoteDao {
 
         int noteId = concreteNote.id();
 
-        var sqlShifting = """
-                UPDATE note_order
-                SET order_number = order_number + 1
-                WHERE context_id = ?
-                """;
-
-        var sqlOrdering = """
-                INSERT INTO note_order(
-                    note_id,
-                    context,
-                    order_number
-                ) VALUES (?, ?, ?);
-                """;
-
-        if(noteDTO.catalogId() != null) {
-            jdbcTemplate.update(
-                    sqlShifting,
-                    ViewContext.CATALOG.getContextId(concreteNote)
-            );
-
-            jdbcTemplate.update(
-                    sqlOrdering,
-                    noteId,
-                    ViewContext.CATALOG,
-                    0
-            );
-        }
-
-        jdbcTemplate.update(
-                sqlShifting,
-                ViewContext.HOME_PAGE.getContextId(concreteNote)
-        );
-
-        jdbcTemplate.update(
-                sqlOrdering,
-                noteId,
-                ViewContext.HOME_PAGE,
-                0
-        );
+        insertIntoNoteCatalogOrderingByRewritingLinks(noteId, noteDTO.catalogId());
+        insertIntoNoteCatalogOrderingByRewritingLinks(noteId, user.getRootCatalogId());
         return note;
     }
 
     @Override
     @Transactional
-    public boolean updateOrderNumberByNoteId(NoteOrderingRequest request) {
-        var shiftInFront = request.newOrderNumber() > request.currentOrderNumber();
-        var conditionalToShift = shiftInFront
-                ? "> ?"
-                : "BETWEEN ? + 1 AND ? - 1";
-
-        var sqlShifting = """
-                UPDATE note_order
-                SET order_number = order_number + 1
-                WHERE order_number %s
-                AND note_id = ?
-                AND context = ?
-                AND context_id = ?
-                """.formatted(conditionalToShift);
-
-        boolean shiftUpdated;
-
-        if(shiftInFront) {
-            shiftUpdated = jdbcTemplate.update(
-                    sqlShifting,
-                    request.newOrderNumber(),
-                    request.noteId(),
-                    request.context(),
-                    request.contextId()
-            ) > 0;
-        } else {
-            shiftUpdated = jdbcTemplate.update(
-                    sqlShifting,
-                    request.newOrderNumber(),
-                    request.currentOrderNumber(),
-                    request.noteId(),
-                    request.context(),
-                    request.contextId()
-            ) > 0;
-        }
-
-        var sqlUpdating = """
-                UPDATE note_order
-                SET order_number = ? + 1
-                WHERE note_id = ?
-                AND context = ?
-                """;
-
-        return jdbcTemplate.update(
-                sqlUpdating,
-                request.newOrderNumber(),
-                request.noteId(),
-                request.context()
-        ) > 0 && shiftUpdated;
+    public boolean updateOrderNumberByNoteId(Integer prevNoteId, Integer noteId, Integer catalogId) {
+        extractNoteIdByRewritingLinks(prevNoteId, noteId, catalogId);
+        injectNoteIdAsNextByRewritingLinksAfter(prevNoteId, noteId, catalogId);
+        return true;
     }
 
     @Override
@@ -174,13 +95,19 @@ public class JdbcNoteDao implements NoteDao {
     }
 
     @Override
-    public boolean removeByNoteId(Integer noteId) {
+    @Transactional
+    public boolean removeByNoteId(Integer prevNoteId, Integer noteId, Integer catalogId) {
         var sql = """
-                DELETE FROM note
-                WHERE id = ?
+                DELETE FROM note_catalog_ordering
+                WHERE note_id = ?
+                AND catalog_id = ?;
                 """;
 
-        return jdbcTemplate.update(sql, noteId) > 0;
+        int nextNoteIdOfDeletingNote = findNextIdFor(noteId, catalogId);
+
+        updatePrevIdAs(prevNoteId, nextNoteIdOfDeletingNote, catalogId);
+
+        return jdbcTemplate.update(sql, noteId, catalogId) > 0;
     }
 
     @Override
@@ -199,40 +126,74 @@ public class JdbcNoteDao implements NoteDao {
     }
 
     @Override
-    public Optional<Integer> selectOrderNumberByNoteIdAndContext(Integer noteId, ViewContext viewContext) {
-        var sql = """
-                SELECT no.order_number
-                FROM note_order no
-                INNER JOIN note n
-                ON n.id = no.note_id
-                WHERE note_id = ?
-                AND context = ?::context_enum
-                LIMIT 1;
-                """;
-        return Optional.ofNullable(jdbcTemplate.queryForObject(
-                sql,
-                Integer.class,
-                noteId,
-                viewContext)
-        );
-    }
+    @Transactional
+    public boolean moveNoteIdToNewCatalogId(Integer noteId,
+                                            Integer currentCatalogId,
+                                            Integer newCatalogId) {
 
-    @Override
-    public boolean updateCatalogIdForNote(Integer catalogId, Integer forNoteId) {
-        var sql = """
-                UPDATE note
-                SET catalog_id = ?
-                WHERE id = ?;
-                """;
+        Integer firstNoteIdFromNewCatalog = selectFirstNoteIdFromCatalog(newCatalogId);
 
-        return jdbcTemplate.update(sql, catalogId, forNoteId) > 0;
+        if(firstNoteIdFromNewCatalog == null) {
+            return false;
+        }
+
+        updatePrevIdAs(noteId, firstNoteIdFromNewCatalog, newCatalogId);
+
+        updatePrevIdAs(null, noteId, currentCatalogId);
+
+        return true;
     }
 
     @Override
     public List<NotePreview> selectAllNotesByOwnerIdIncludingCatalogs(Integer ownerId, Integer offset, Integer limit) {
-        var sql = """
-                SELECT 
-                    n.id n_id,
+        var sql = getCatalogSelectingRecursiveSql()
+                .formatted("""
+                        WHERE nfciuo.catalog_id IN((
+                            SELECT id
+                            FROM catalog
+                            WHERE owner_id = ?
+                        ))
+                        """);
+
+        return jdbcTemplate.query(
+                sql,
+                notePreviewListMapper,
+                ownerId,
+                offset,
+                limit
+        );
+    }
+
+    @Override
+    public List<NotePreview> selectAllNotesByOwnerIdWithoutCatalogs(Integer rootCatalogId, Integer offset, Integer limit) {
+        var sql = getCatalogSelectingRecursiveSql()
+                .formatted("WHERE nfciuo.catalog_id = ?");
+
+        return jdbcTemplate.query(
+                sql,
+                notePreviewListMapper,
+                rootCatalogId,
+                offset,
+                limit
+        );
+    }
+
+    private String getCatalogSelectingRecursiveSql() {
+        return """
+                WITH RECURSIVE notes_from_catalog_in_user_order AS (
+                  SELECT note_id, catalog_id, 0 as level
+                  FROM note_catalog_ordering
+                  WHERE prev_note_id IS NULL
+                  AND catalog_id = ?
+                  UNION
+                  SELECT nco.note_id, nco.catalog_id, nfciuo.level + 1 AS level
+                  FROM note_catalog_ordering nco
+                  JOIN notes_from_catalog_in_user_order nfciuo
+                  ON nfciuo.note_id = nco.prev_note_id
+                  AND nfciuo.catalog_id = nco.catalog_id
+                )
+                SELECT
+                    DISTINCT n.id n_id,
                     n.title n_title,
                     n.description n_description,
                     n.date_of_create n_date_of_create,
@@ -241,55 +202,101 @@ public class JdbcNoteDao implements NoteDao {
                     n.catalog_id n_catalog_id,
                     no.order_number no_order_number
                 FROM note n
-                INNER JOIN catalog c
+                LEFT JOIN catalog c
                 ON n.catalog_id = c.id
-                INNER JOIN note_oreder no
-                ON no.note_id = n.id
-                WHERE n.owner_id = ?
-                AND no.context = ?
-                ORDER BY no.order_number
+                JOIN notes_from_catalog_in_user_order nfciuo
+                ON n.id = nfciuo.note_id
+                WHERE %s
+                ORDER BY nfciuo.level
                 OFFSET ?
-                LIMIT ?;
+                LIMIT ?
                 """;
-        //todo insert context_id
-        return jdbcTemplate.query(
-                sql,
-                notePreviewListMapper,
-                ownerId,
-                ViewContext.HOME_PAGE,
-                offset,
-                limit
+    }
+
+    private void insertIntoNoteCatalogOrderingByRewritingLinks(Integer noteId, Integer catalogId) {
+        Integer firstNoteId = selectFirstNoteIdFromCatalog(catalogId);
+        updatePrevIdAs(noteId, firstNoteId, catalogId);
+        insertIntoNoteCatalogOrdering(noteId, catalogId);
+    }
+
+    private void insertIntoNoteCatalogOrdering(Integer noteId, Integer catalogId) {
+        var sqlOrdering = """
+                INSERT INTO note_catalog_ordering(
+                    note_id,
+                    catalog_id
+                ) VALUES (?, ?);
+                """;
+
+        jdbcTemplate.update(
+                sqlOrdering,
+                noteId,
+                catalogId
         );
     }
 
-    @Override
-    public List<NotePreview> selectAllNotesByOwnerIdWithoutCatalogs(Integer ownerId, Integer offset, Integer limit) {
-        var sql = """
-                SELECT 
-                    n.id n_id,
-                    n.title n_title,
-                    n.description n_description,
-                    n.date_of_create n_date_of_create,
-                    n.catalog_id n_catalog_id,
-                    no.order_number no_order_number
-                FROM note n
-                INNER JOIN note_oreder no
-                ON no.note_id = n.id
-                WHERE n.owner_id = ?
-                AND no.context = ?
-                AND n.catalog_id IS NULL
-                ORDER BY no.order_number
-                OFFSET ?
-                LIMIT ?;
+    private void extractNoteIdByRewritingLinks(Integer prevNoteId,
+                                                  Integer noteId,
+                                                  Integer catalogId) {
+
+        Integer nextNoteIdForRewritingNote = findNextIdFor(noteId, catalogId);
+
+        updatePrevIdAs(prevNoteId, nextNoteIdForRewritingNote, catalogId);
+    }
+
+    private void injectNoteIdAsNextByRewritingLinksAfter(Integer prevNoteId,
+                                                            Integer noteId,
+                                                            Integer catalogId) {
+
+        Integer nextId = findNextIdFor(noteId, catalogId);
+        updatePrevIdAs(noteId, nextId, catalogId);
+        updatePrevIdAs(prevNoteId, noteId, catalogId);
+    }
+
+    private Integer findNextIdFor(Integer noteId, Integer catalogId) {
+        var findingNextNoteIdSql = """
+                SELECT note_id
+                FROM note_catalog_ordering
+                WHERE prev_id = ?
+                AND catalog_id = ?;
                 """;
 
-        return jdbcTemplate.query(
+        return jdbcTemplate.queryForObject(
+                findingNextNoteIdSql,
+                Integer.class,
+                noteId,
+                catalogId
+        );
+    }
+
+    private void updatePrevIdAs(Integer prevId,
+                                   Integer noteId,
+                                   Integer catalogId) {
+        var prevIdAsNSql = """
+                UPDATE note_catalog_ordering
+                SET prev_id = ?
+                WHERE note_id = ?
+                AND catalog_id = ?;
+                """;
+        jdbcTemplate.update(
+                prevIdAsNSql,
+                prevId,
+                noteId,
+                catalogId
+        );
+    }
+
+    private Integer selectFirstNoteIdFromCatalog(Integer catalogId) {
+        var sql = """
+                SELECT note_id
+                FROM note_catalog_ordering
+                WHERE catalog_id = ?
+                AND prev_note IS NULL
+                """;
+
+        return jdbcTemplate.queryForObject(
                 sql,
-                notePreviewListMapper,
-                ownerId,
-                ViewContext.HOME_PAGE,
-                offset,
-                limit
+                Integer.class,
+                catalogId
         );
     }
 }
