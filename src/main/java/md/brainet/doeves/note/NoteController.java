@@ -1,10 +1,12 @@
 package md.brainet.doeves.note;
 
+import md.brainet.doeves.catalog.CatalogOrderingRequest;
 import md.brainet.doeves.user.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,6 +24,7 @@ public class NoteController {
     }
 
     @GetMapping("{id}")
+    @PreAuthorize("@notePermissionUtil.haveEnoughRights(#noteId, #user.id)")
     public ResponseEntity<?> fetchConcreteNote(
             @AuthenticationPrincipal User user,
             @PathVariable("id") Integer noteId
@@ -34,12 +37,21 @@ public class NoteController {
     @GetMapping("all")
     public ResponseEntity<?> fetchAllOwnerNote(
             @AuthenticationPrincipal User user,
-            //todo extract to request param
-            LimitedListNoteRequest request
+            @RequestParam(name = "offset", defaultValue = "0") Integer offset,
+            @RequestParam(name = "limit", defaultValue = "10") Integer limit,
+            @RequestParam(name = "including-catalogs", defaultValue = "false") Boolean includingCatalogs
     ) {
 
-        List<NotePreview> notes = noteService.fetchAllOwnerNote(user.getId(), request);
-        LOG.info("User [email={}] fetched all tasks [includingCatalogs={}]", user.getEmail(), request.includingCatalogs());
+        List<NotePreview> notes = noteService.fetchAllOwnerNote(
+                user.getId(),
+                new LimitedListNoteRequest(
+                        offset,
+                        limit,
+                        includingCatalogs
+                )
+        );
+
+        LOG.info("User [email={}] fetched all tasks [includingCatalogs={}]", user.getEmail(), includingCatalogs);
         return new ResponseEntity<>(notes, HttpStatus.OK);
     }
 
@@ -48,30 +60,13 @@ public class NoteController {
             @AuthenticationPrincipal User user,
             NoteDTO noteDTO
     ) {
-        Note note = noteService.createNote(user.getId(), noteDTO);
+        Note note = noteService.createNote(user, noteDTO);
         LOG.info("User [email={}] created note [id={}]", user.getEmail(), note.id());
         return new ResponseEntity<>(note, HttpStatus.CREATED);
     }
 
-    @PatchMapping("{editingNoteId}/order-after/{backNoteId}")
-    public ResponseEntity<?> changeNoteOrder(
-            @AuthenticationPrincipal User user,
-            @PathVariable("editingNoteId") Integer editingNoteId,
-            @RequestParam("backNoteId")Integer backNoteId,
-            @RequestParam("view") ViewContext viewContext
-    ) {
-
-        noteService.changeOrderNumber(editingNoteId, backNoteId, viewContext);
-        LOG.info("User [email={}] moved note [editingNoteId={}] after [frontNoteId={}] within {}",
-                user.getEmail(),
-                editingNoteId,
-                backNoteId,
-                viewContext.toString().toUpperCase()
-        );
-        return new ResponseEntity<>(HttpStatus.ACCEPTED);
-    }
-
     @PatchMapping("{id}/name")
+    @PreAuthorize("@notePermissionUtil.haveEnoughRights(#noteId, #user.id)")
     public ResponseEntity<?> changeName(
             @AuthenticationPrincipal User user,
             @PathVariable("id") Integer noteId,
@@ -84,6 +79,7 @@ public class NoteController {
     }
 
     @PatchMapping("{id}/description")
+    @PreAuthorize("@notePermissionUtil.haveEnoughRights(#noteId, #user.id)")
     public ResponseEntity<?> changeDescription(
             @AuthenticationPrincipal User user,
             @PathVariable("id") Integer noteId,
@@ -95,24 +91,60 @@ public class NoteController {
         return new ResponseEntity<>(HttpStatus.ACCEPTED);
     }
 
-    @PatchMapping("{id}/catalog")
+    @PatchMapping("{id}/from/{from}/to/{to}")
+    @PreAuthorize("@notePermissionUtil.haveEnoughRights(#noteId, #user.id) " +
+            "&& @catalogPermissionUtil.haveEnoughRights(#fromCatalogId, #user.id)" +
+            "&& @catalogPermissionUtil.haveEnoughRights(#toCatalogId, #user.id)")
     public ResponseEntity<?> changeCatalog(
             @AuthenticationPrincipal User user,
             @PathVariable("id") Integer noteId,
-            @RequestParam("v") Integer catalogId
+            @PathVariable("from") Integer fromCatalogId,
+            @PathVariable("to") Integer toCatalogId
     ) {
-        noteService.changeCatalog(noteId, catalogId);
-        LOG.info("User [email={}] changed note [noteId={}] catalog on [catalogId={}]'", user.getEmail(), noteId, catalogId);
+        noteService.changeCatalog(new CatalogOrderingRequest(
+                noteId,
+                fromCatalogId,
+                toCatalogId,
+                user
+        ));
+        LOG.info("User [email={}] has moved [noteId={}] from catalog[id={}] to [id={}]'",
+                user.getEmail(),
+                noteId,
+                fromCatalogId,
+                toCatalogId);
+        return new ResponseEntity<>(HttpStatus.ACCEPTED);
+    }
+
+    @PatchMapping("{editingNoteId}/order-after/{prevNoteId}/catalog")
+    @PreAuthorize("@catalogPermissionUtil.haveEnoughRights(#catalogId, #user.id)" +
+            "&& @notePermissionUtil.haveEnoughRights(#editingNoteId, #user.id)" +
+            "&& @notePermissionUtil.haveEnoughRights(#prevNoteId, #user.id)")
+    public ResponseEntity<?> changeNoteOrder(
+            @AuthenticationPrincipal User user,
+            @RequestParam("id") Integer catalogId,
+            @PathVariable("editingNoteId") Integer editingNoteId,
+            @PathVariable("prevNoteId")Integer prevNoteId
+    ) {
+
+        noteService.changeOrderNumber(editingNoteId, prevNoteId, catalogId);
+        LOG.info("User [email={}] moved note [editingNoteId={}] after [frontNoteId={}]",
+                user.getEmail(),
+                editingNoteId,
+                prevNoteId
+        );
         return new ResponseEntity<>(HttpStatus.ACCEPTED);
     }
 
 
-    @DeleteMapping("{id}")
+    @PreAuthorize("@notePermissionUtil.haveEnoughRights(#noteId, #user.id) " +
+            "&& @catalogPermissionUtil.haveEnoughRights(#catalogId, #user.id)")
+    @DeleteMapping("{id}/catalog")
     public ResponseEntity<?> deleteNote(
             @AuthenticationPrincipal User user,
-            @PathVariable("id") Integer noteId
+            @PathVariable("id") Integer noteId,
+            @RequestParam("id") Integer catalogId
     ) {
-        noteService.removeNote(noteId);
+        noteService.removeNote(noteId, catalogId);
         LOG.info("User [email={}] deleted note [id={}]", user.getEmail(), noteId);
         return new ResponseEntity<>(HttpStatus.OK);
     }

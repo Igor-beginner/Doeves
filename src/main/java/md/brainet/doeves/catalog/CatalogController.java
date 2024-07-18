@@ -1,7 +1,10 @@
 package md.brainet.doeves.catalog;
 
 
+import md.brainet.doeves.note.Note;
+import md.brainet.doeves.note.NoteDao;
 import md.brainet.doeves.note.NotePreview;
+import md.brainet.doeves.note.NoteService;
 import md.brainet.doeves.user.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

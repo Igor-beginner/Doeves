@@ -15,4 +15,6 @@ public interface NoteDao {
     boolean moveNoteIdToNewCatalogId(Integer noteId, Integer currentCatalogId, Integer newCatalogId);
     List<NotePreview> selectAllNotesByOwnerIdIncludingCatalogs(Integer ownerId, Integer offset, Integer limit);
     List<NotePreview> selectAllNotesByOwnerIdWithoutCatalogs(Integer ownerId, Integer offset, Integer limit);
+
+    Integer selectOwnerIdByNoteId(Integer noteId);
 }

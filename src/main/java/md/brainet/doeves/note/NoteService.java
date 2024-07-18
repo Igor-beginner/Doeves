@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface NoteService {
     Note createNote(User user, NoteDTO noteDTO);
-    void changeOrderNumber(Integer editingNoteId, Integer frontNoteId, Integer catalogId);
+    void changeOrderNumber(Integer editingNoteId, Integer prevNoteId, Integer catalogId);
     void changeName(Integer noteId, String name);
     void changeDescription(Integer noteId, String description);
     void removeNote(Integer noteId, Integer catalogId);

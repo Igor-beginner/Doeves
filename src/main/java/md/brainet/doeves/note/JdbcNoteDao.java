@@ -189,6 +189,23 @@ public class JdbcNoteDao implements NoteDao {
         );
     }
 
+    @Override
+    public Integer selectOwnerIdByNoteId(Integer noteId) {
+        var sql = """
+                SELECT DISTINCT c.owner_id
+                FROM catalog c
+                JOIN note_catalog_ordering nco
+                ON nco.catalog_id = c.id
+                AND nco.note_id = ?;
+                """;
+
+        return jdbcTemplate.queryForObject(
+                sql,
+                Integer.class,
+                noteId
+        );
+    }
+
     private String getCatalogSelectingRecursiveSql() {
         return """
                 WITH RECURSIVE notes_from_catalog_in_user_order AS (
