@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,9 +19,12 @@ public class CatalogController {
 
     private static final Logger LOG = LoggerFactory.getLogger(CatalogController.class);
     private final CatalogService catalogService;
+    private final CatalogPermissionUtil catalogPermissionUtil;
 
-    public CatalogController(CatalogService catalogService) {
+    public CatalogController(CatalogService catalogService,
+                             CatalogPermissionUtil catalogPermissionUtil) {
         this.catalogService = catalogService;
+        this.catalogPermissionUtil = catalogPermissionUtil;
     }
 
     @GetMapping("all")
@@ -39,6 +43,7 @@ public class CatalogController {
     }
 
     @GetMapping("{id}/notes")
+    @PreAuthorize("@catalogPermissionUtil.haveEnoughRights(#catalogId, #user.id)")
     public ResponseEntity<?> fetchNotesFromConcreteCatalog(
             @AuthenticationPrincipal User user,
             @PathVariable("id") Integer catalogId,
@@ -61,23 +66,26 @@ public class CatalogController {
         return new ResponseEntity<>(catalog, HttpStatus.CREATED);
     }
 
-    @PatchMapping("{editingNoteId}/order-after/{backNoteId}")
+    @PatchMapping("{editingCatalogId}/order-after/{backCatalogId}")
+    @PreAuthorize("@catalogPermissionUtil.haveEnoughRights(#editingCatalogId, #user.id)" +
+            "&& @catalogPermissionUtil.haveEnoughRights(#backCatalogId, #user.id)")
     public ResponseEntity<?> changeCatalogOrder(
             @AuthenticationPrincipal User user,
-            @PathVariable("editingNoteId") Integer editingNoteId,
-            @RequestParam("backNoteId")Integer backNoteId
+            @PathVariable("editingCatalogId") Integer editingCatalogId,
+            @RequestParam("backCatalogId")Integer backCatalogId
             ) {
 
-        catalogService.rewriteLinkAsPrevCatalogIdFor(editingNoteId, backNoteId);
+        catalogService.rewriteLinkAsPrevCatalogIdFor(editingCatalogId, backCatalogId);
         LOG.info("User [email={}] has set prev_id as {} for catalog_id {}",
                 user.getEmail(),
-                backNoteId,
-                editingNoteId
+                backCatalogId,
+                editingCatalogId
         );
         return new ResponseEntity<>(HttpStatus.ACCEPTED);
     }
 
     @PatchMapping("{id}/name")
+    @PreAuthorize("@catalogPermissionUtil.haveEnoughRights(#catalogId, #user.id)")
     public ResponseEntity<?> changeName(
             @AuthenticationPrincipal User user,
             @PathVariable("id") Integer catalogId,
@@ -91,6 +99,7 @@ public class CatalogController {
 
 
     @DeleteMapping("{id}")
+    @PreAuthorize("@catalogPermissionUtil.haveEnoughRights(#catalogId, #user.id)")
     public ResponseEntity<?> deleteCatalog(
             @AuthenticationPrincipal User user,
             @PathVariable("id") Integer catalogId
