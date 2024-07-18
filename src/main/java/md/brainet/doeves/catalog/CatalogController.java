@@ -1,6 +1,7 @@
 package md.brainet.doeves.catalog;
 
-import md.brainet.doeves.note.Note;
+
+import md.brainet.doeves.note.NotePreview;
 import md.brainet.doeves.user.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,11 +42,11 @@ public class CatalogController {
     public ResponseEntity<?> fetchNotesFromConcreteCatalog(
             @AuthenticationPrincipal User user,
             @PathVariable("id") Integer catalogId,
-            @RequestParam("offset") Integer offset,
-            @RequestParam("limit") Integer limit
+            @RequestParam(value = "offset", defaultValue = "0") Integer offset,
+            @RequestParam(value = "limit", defaultValue = "10") Integer limit
     ) {
 
-        List<Note> notes = catalogService.fetchAllCatalogNotes(catalogId, offset, limit);
+        List<NotePreview> notes = catalogService.fetchAllCatalogNotes(catalogId, offset, limit);
         LOG.info("Catalog notes [id={}] was requested by user [email={}].", catalogId, user.getEmail());
         return new ResponseEntity<>(notes, HttpStatus.OK);
     }
@@ -67,11 +68,11 @@ public class CatalogController {
             @RequestParam("backNoteId")Integer backNoteId
             ) {
 
-        Integer newOrderNumber = catalogService.rewriteLinkAsPrevCatalogIdFor(editingNoteId, backNoteId);
-        LOG.info("User [email={}] changed catalog [id={}] order number on {}",
+        catalogService.rewriteLinkAsPrevCatalogIdFor(editingNoteId, backNoteId);
+        LOG.info("User [email={}] has set prev_id as {} for catalog_id {}",
                 user.getEmail(),
-                editingNoteId,
-                newOrderNumber
+                backNoteId,
+                editingNoteId
         );
         return new ResponseEntity<>(HttpStatus.ACCEPTED);
     }
@@ -80,7 +81,7 @@ public class CatalogController {
     public ResponseEntity<?> changeName(
             @AuthenticationPrincipal User user,
             @PathVariable("id") Integer catalogId,
-            @RequestParam("v") String newName
+            @RequestParam("val") String newName
     ) {
 
         catalogService.changeName(catalogId, newName);
