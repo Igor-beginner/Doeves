@@ -29,11 +29,6 @@ public class JdbcNoteDao implements NoteDao {
     @Override
     @Transactional
     public Optional<Note> insertNote(User user, NoteDTO noteDTO) {
-        //todo inserting in note will processing like
-        // 1. insert note in Note table
-        // 2. insert note_id and catalog_id and prev_note_id in note_catalog_ordering
-        // 3. order_number will generate automaticly (SERIAL)
-        // 4. checking on catalog_id is null will performing in service class
         var sql = """
                 INSERT INTO note(title, description, catalog_id)
                 VALUES(?, ?, ?)
@@ -44,9 +39,9 @@ public class JdbcNoteDao implements NoteDao {
                 jdbcTemplate.query(
                         sql,
                         noteMapper,
-                        noteDTO.name(),
-                        noteDTO.description(),
-                        noteDTO.catalogId(),
+                        noteDTO.getName(),
+                        noteDTO.getDescription(),
+                        noteDTO.getCatalogId(),
                         user.getId()
                 )
         );
@@ -59,7 +54,7 @@ public class JdbcNoteDao implements NoteDao {
 
         int noteId = concreteNote.id();
 
-        insertIntoNoteCatalogOrderingByRewritingLinks(noteId, noteDTO.catalogId());
+        insertIntoNoteCatalogOrderingByRewritingLinks(noteId, noteDTO.getCatalogId());
         insertIntoNoteCatalogOrderingByRewritingLinks(noteId, user.getRootCatalogId());
         return note;
     }
@@ -96,18 +91,34 @@ public class JdbcNoteDao implements NoteDao {
 
     @Override
     @Transactional
-    public boolean removeByNoteId(Integer prevNoteId, Integer noteId, Integer catalogId) {
+    public boolean removeByNoteId(Integer noteId, Integer catalogId) {
         var sql = """
                 DELETE FROM note_catalog_ordering
                 WHERE note_id = ?
                 AND catalog_id = ?;
                 """;
 
+        Integer prevNoteId = findPrevIdFor(noteId);
+
         int nextNoteIdOfDeletingNote = findNextIdFor(noteId, catalogId);
 
         updatePrevIdAs(prevNoteId, nextNoteIdOfDeletingNote, catalogId);
 
         return jdbcTemplate.update(sql, noteId, catalogId) > 0;
+    }
+
+    private Integer findPrevIdFor(Integer noteId) {
+        var sql = """
+                SELECT prev_id
+                FROM note_catalog_ordering nco
+                WHERE note_id = ?;
+                """;
+
+        return jdbcTemplate.queryForObject(
+                sql,
+                Integer.class,
+                noteId
+        );
     }
 
     @Override

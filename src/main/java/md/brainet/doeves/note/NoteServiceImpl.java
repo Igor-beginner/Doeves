@@ -1,7 +1,9 @@
 package md.brainet.doeves.note;
 
+import md.brainet.doeves.catalog.CatalogOrderingRequest;
 import md.brainet.doeves.exception.NoteNotFoundException;
 import md.brainet.doeves.exception.UserNotFoundException;
+import md.brainet.doeves.user.User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,53 +20,19 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
-    public Note createNote(Integer ownerId, NoteDTO noteDTO) {
-        if(Objects.isNull(noteDTO.orderNumber())) {
-            noteDTO = new NoteDTO(
-                    noteDTO.name(),
-                    noteDTO.description(),
-                    noteDTO.catalogId(),
-                    0
-            );
+    public Note createNote(User user, NoteDTO noteDTO) {
+        if (noteDTO.getCatalogId() == null) {
+            noteDTO.setCatalogId(user.getRootCatalogId());
         }
-
-        return noteDao.insertNote(ownerId, noteDTO)
-                .orElseThrow(() -> new UserNotFoundException(ownerId));
+        return noteDao.insertNote(user, noteDTO)
+                .orElseThrow(() -> new UserNotFoundException(user.getId()));
     }
 
     @Override
-    @Transactional
-    public void changeOrderNumber(Integer editingNoteId, Integer frontNoteId, ViewContext context) {
-
-        Note editingNote = fetchNote(editingNoteId);
-
-        if(editingNote.catalogId() == null && context == ViewContext.CATALOG) {
-            //todo throw NoteDoesNotHaveCatalogException
-        }
-
-        Integer frontNoteOrderNumber = frontNoteId == null
-                ? 0
-                : fetchOrderNumber(frontNoteId, context);
-
-        boolean updated = noteDao.updateOrderNumberByNoteId(
-                new NoteOrderingRequest(
-                        editingNoteId,
-                        fetchOrderNumber(editingNoteId, context),
-                        frontNoteOrderNumber,
-                        context,
-                        context.getContextId(editingNote)
-                )
-        );
-
-        if(!updated) {
-            //todo NothingToUpdateException
-        }
-    }
-
-
-    public int fetchOrderNumber(Integer noteId, ViewContext context) {
-        return noteDao.selectOrderNumberByNoteIdAndContext(noteId, context)
-                .orElseThrow(() -> new NoteNotFoundException(noteId));
+    public void changeOrderNumber(Integer editingNoteId,
+                                  Integer prevNoteId,
+                                  Integer catalogId) {
+        noteDao.updateOrderNumberByNoteId(prevNoteId, editingNoteId, catalogId);
     }
 
     @Override
@@ -84,8 +52,8 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
-    public void removeNote(Integer noteId) {
-        boolean removed = noteDao.removeByNoteId(noteId);
+    public void removeNote(Integer noteId, Integer catalogId) {
+        boolean removed = noteDao.removeByNoteId(noteId, catalogId);
         if(!removed) {
             throw new NoteNotFoundException(noteId);
         }
@@ -98,16 +66,25 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
-    public void changeCatalog(Integer noteId, Integer catalogId) {
-        boolean updated = noteDao.moveNoteIdToNewCatalogId(catalogId, noteId);
+    public void changeCatalog(CatalogOrderingRequest request) {
+        if(request.getSourceCatalogId() == null) {
+            request.setSourceCatalogId(request.getUser().getRootCatalogId());
+        }
+
+        boolean updated = noteDao.moveNoteIdToNewCatalogId(
+                request.getNoteId(),
+                request.getSourceCatalogId(),
+                request.getDestinationCatalogId()
+        );
         if(!updated) {
-            throw new NoteNotFoundException(noteId);
+            throw new NoteNotFoundException(request.getNoteId());
         }
     }
 
     @Override
     public List<NotePreview> fetchAllOwnerNote(Integer ownerId, LimitedListNoteRequest request) {
         List<NotePreview> notes;
+
         if (request.includingCatalogs()) {
             notes = noteDao.selectAllNotesByOwnerIdIncludingCatalogs(
                     ownerId,

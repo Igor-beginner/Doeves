@@ -156,7 +156,7 @@ public class JdbcCatalogDao implements CatalogDao{
     private void extractCatalogIdByRewritingLinks(Integer prevCatalogId,
                                                   Integer catalogId) {
 
-        Integer nextCatalogIdForRewritingNote = findNextIdFor(catalogId);\
+        Integer nextCatalogIdForRewritingNote = findNextIdFor(catalogId);
         updatePrevIdAs(prevCatalogId, nextCatalogIdForRewritingNote);
     }
 
