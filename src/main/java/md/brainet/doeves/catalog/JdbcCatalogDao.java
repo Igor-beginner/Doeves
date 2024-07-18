@@ -148,7 +148,7 @@ public class JdbcCatalogDao implements CatalogDao{
 
     @Override
     @Transactional
-    public boolean updateOrderNumberByCatalogId(Integer prevCatalogId, Integer catalogId) {
+    public void updateOrderNumberByCatalogId(Integer prevCatalogId, Integer catalogId) {
         extractCatalogIdByRewritingLinks(prevCatalogId, catalogId);
         injectCatalogIdAsNextByRewritingLinksAfter(prevCatalogId, catalogId);
     }
@@ -156,8 +156,7 @@ public class JdbcCatalogDao implements CatalogDao{
     private void extractCatalogIdByRewritingLinks(Integer prevCatalogId,
                                                   Integer catalogId) {
 
-        Integer nextCatalogIdForRewritingNote = findNextIdFor(catalogId);
-
+        Integer nextCatalogIdForRewritingNote = findNextIdFor(catalogId);\
         updatePrevIdAs(prevCatalogId, nextCatalogIdForRewritingNote);
     }
 

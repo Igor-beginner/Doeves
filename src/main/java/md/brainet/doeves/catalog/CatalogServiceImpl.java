@@ -1,11 +1,10 @@
 package md.brainet.doeves.catalog;
 
 import md.brainet.doeves.exception.CatalogNotFoundException;
-import md.brainet.doeves.note.Note;
+import md.brainet.doeves.note.NotePreview;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Objects;
 
 @Service
 public class CatalogServiceImpl implements CatalogService {
@@ -18,13 +17,6 @@ public class CatalogServiceImpl implements CatalogService {
 
     @Override
     public Catalog createCatalog(Integer ownerId, CatalogDTO catalogDTO) {
-        if(Objects.isNull(catalogDTO.orderNumber())) {
-            catalogDTO = new CatalogDTO(
-                    catalogDTO.name(),
-                    0
-            );
-        }
-
         return catalogDao.insertCatalog(ownerId, catalogDTO);
     }
 
@@ -40,25 +32,10 @@ public class CatalogServiceImpl implements CatalogService {
     }
 
     @Override
-    public Integer changeOrderNumber(Integer editingCatalogId, Integer backCatalogId) {
-        //todo fetch two catalogs
-        var editingCatalog = findCatalog(editingCatalogId);
-        var backCatalogOrderNumber = backCatalogId == null
-                ? 0
-                : findCatalog(backCatalogId).orderNumber();
-
-        boolean updated = catalogDao.updateOrderNumberByCatalogId(
-                new CatalogOrderingRequest(
-                        editingCatalogId,
-                        editingCatalog.orderNumber(),
-                        backCatalogOrderNumber,
-                        editingCatalog.ownerId()
-                )
+    public void rewriteLinkAsPrevCatalogIdFor(Integer editingCatalogId, Integer backCatalogId) {
+        catalogDao.updateOrderNumberByCatalogId(
+                backCatalogId, editingCatalogId
         );
-        if(!updated) {
-            //todo throw nothingToUpdate
-        }
-        return backCatalogOrderNumber;
     }
 
     @Override
@@ -78,7 +55,7 @@ public class CatalogServiceImpl implements CatalogService {
     }
 
     @Override
-    public List<Note> fetchAllCatalogNotes(Integer catalogId, Integer offset, Integer limit) {
+    public List<NotePreview> fetchAllCatalogNotes(Integer catalogId, Integer offset, Integer limit) {
         return catalogDao.selectAllNotesByCatalogId(catalogId, offset, limit);
     }
 }

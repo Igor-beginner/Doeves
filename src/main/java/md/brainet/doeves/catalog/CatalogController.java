@@ -2,10 +2,8 @@ package md.brainet.doeves.catalog;
 
 import md.brainet.doeves.note.Note;
 import md.brainet.doeves.user.User;
-import org.apache.juli.logging.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.relational.core.sql.In;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -69,7 +67,7 @@ public class CatalogController {
             @RequestParam("backNoteId")Integer backNoteId
             ) {
 
-        Integer newOrderNumber = catalogService.changeOrderNumber(editingNoteId, backNoteId);
+        Integer newOrderNumber = catalogService.rewriteLinkAsPrevCatalogIdFor(editingNoteId, backNoteId);
         LOG.info("User [email={}] changed catalog [id={}] order number on {}",
                 user.getEmail(),
                 editingNoteId,

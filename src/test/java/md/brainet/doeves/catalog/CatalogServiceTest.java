@@ -130,7 +130,7 @@ class CatalogServiceTest extends IntegrationTestBase {
         final int newOrderNumber = 10;
 
         //when
-        catalogService.changeOrderNumber(catalogId, newOrderNumber);
+        catalogService.rewriteLinkAsPrevCatalogIdFor(catalogId, newOrderNumber);
 
         //then
         var catalog = catalogDao.selectCatalogById(catalogId);
@@ -144,7 +144,7 @@ class CatalogServiceTest extends IntegrationTestBase {
         final int newOrderNumber = 10;
 
         //when
-        Executable executable = () -> catalogService.changeOrderNumber(catalogId, newOrderNumber);
+        Executable executable = () -> catalogService.rewriteLinkAsPrevCatalogIdFor(catalogId, newOrderNumber);
 
         //then
         assertThrows(CatalogNotFoundException.class, executable);

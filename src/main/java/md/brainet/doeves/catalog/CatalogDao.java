@@ -10,7 +10,7 @@ public interface CatalogDao {
     Catalog insertCatalog(Integer ownerId, CatalogDTO catalogDTO);
     Optional<Catalog> selectCatalogById(Integer id);
     List<Catalog> selectAllCatalogsByOwnerId(Integer ownerId, Integer offset, Integer limit);
-    boolean updateOrderNumberByCatalogId(Integer prevCatalogId, Integer catalogId);
+    void updateOrderNumberByCatalogId(Integer prevCatalogId, Integer catalogId);
     boolean updateNameByCatalogId(Integer catalogId, String catalogName);
     boolean removeByCatalogId(Integer catalogId);
     List<NotePreview> selectAllNotesByCatalogId(Integer catalogId, Integer offset, Integer limit);
