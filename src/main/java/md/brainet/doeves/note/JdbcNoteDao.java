@@ -226,9 +226,7 @@ public class JdbcNoteDao implements NoteDao {
                     n.description n_description,
                     n.date_of_create n_date_of_create,
                     c.id c_id,
-                    c.title c_title,
-                    n.catalog_id n_catalog_id,
-                    no.order_number no_order_number
+                    c.title c_title
                 FROM note n
                 LEFT JOIN catalog c
                 ON n.catalog_id = c.id

@@ -13,20 +13,13 @@ import java.util.List;
 @Service
 public class NotePreviewListResultSetMapper implements ResultSetExtractor<List<NotePreview>> {
 
-    private final NotePreviewResultSetMapper notePreviewMapper;
-
-    public NotePreviewListResultSetMapper(NotePreviewResultSetMapper notePreviewMapper) {
-        this.notePreviewMapper = notePreviewMapper;
-    }
-
     @Override
     public List<NotePreview> extractData(ResultSet rs) throws SQLException, DataAccessException {
         List<NotePreview> notePreviews = new ArrayList<>();
-
         while (rs.next()) {
             CatalogPreview catalogPreview = null;
 
-            if(rs.getObject("n_catalog_id") != null) {
+            if(rs.getObject("c_id") != null) {
                 catalogPreview = new CatalogPreview(
                         rs.getInt("c_id"),
                         rs.getString("c_title")
@@ -38,7 +31,6 @@ public class NotePreviewListResultSetMapper implements ResultSetExtractor<List<N
                             rs.getInt("n_id"),
                             rs.getString("n_title"),
                             rs.getString("n_description"),
-                            rs.getInt("no_order_number"),
                             catalogPreview,
                             rs.getTimestamp("n_date_of_create").toLocalDateTime()
                     )

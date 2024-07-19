@@ -10,10 +10,6 @@ public record Note(
         Integer id,
         String name,
         String description,
-        LocalDateTime dateOfCreate,
-        @JsonIgnore
-        Integer catalogId,
-        @JsonIgnore
-        Integer ownerId
+        LocalDateTime dateOfCreate
 ) {
 }
