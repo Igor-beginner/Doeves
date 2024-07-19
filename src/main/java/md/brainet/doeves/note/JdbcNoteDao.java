@@ -109,7 +109,7 @@ public class JdbcNoteDao implements NoteDao {
 
     private Integer findPrevIdFor(Integer noteId) {
         var sql = """
-                SELECT prev_id
+                SELECT prev_note_id
                 FROM note_catalog_ordering nco
                 WHERE note_id = ?;
                 """;
@@ -282,7 +282,7 @@ public class JdbcNoteDao implements NoteDao {
         var findingNextNoteIdSql = """
                 SELECT note_id
                 FROM note_catalog_ordering
-                WHERE prev_id = ?
+                WHERE prev_note_id = ?
                 AND catalog_id = ?;
                 """;
 
@@ -299,7 +299,7 @@ public class JdbcNoteDao implements NoteDao {
                                    Integer catalogId) {
         var prevIdAsNSql = """
                 UPDATE note_catalog_ordering
-                SET prev_id = ?
+                SET prev_note_id = ?
                 WHERE note_id = ?
                 AND catalog_id = ?;
                 """;
@@ -316,7 +316,7 @@ public class JdbcNoteDao implements NoteDao {
                 SELECT note_id
                 FROM note_catalog_ordering
                 WHERE catalog_id = ?
-                AND prev_note IS NULL
+                AND prev_note_id IS NULL
                 """;
 
         return jdbcTemplate.queryForObject(

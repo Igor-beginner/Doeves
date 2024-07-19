@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 public record Catalog(
         Integer id,
         String name,
+        @JsonIgnore
         Integer prevCatalogId,
         @JsonIgnore
         Integer ownerId,

@@ -34,7 +34,7 @@ public class JdbcCatalogDao implements CatalogDao{
         var sql = """
                 INSERT INTO catalog(title, prev_catalog_id, owner_id)
                 VALUES(?, ?, ?)
-                RETURNING id, title;
+                RETURNING id, title, date_of_create;
                 """;
 
         Integer firstNoteId = selectFirstCatalogIdByOwnerId(ownerId);
@@ -64,7 +64,7 @@ public class JdbcCatalogDao implements CatalogDao{
                 SELECT c.id
                 FROM catalog c
                 WHERE c.owner_id = ?
-                AND c.prev_id IS NULL
+                AND c.prev_catalog_id IS NULL
                 AND c.id != (
                     SELECT root_catalog_id
                     FROM users
@@ -84,7 +84,7 @@ public class JdbcCatalogDao implements CatalogDao{
                                 Integer catalogId) {
         var prevIdAsNSql = """
                 UPDATE catalog
-                SET prev_id = ?
+                SET prev_catalog_id = ?
                 WHERE catalog_id = ?;
                 """;
 
@@ -102,7 +102,7 @@ public class JdbcCatalogDao implements CatalogDao{
                    id,
                    title,
                    owner_id,
-                   prev_catalgo_id,
+                   prev_catalog_id,
                    date_of_create
                 FROM catalog
                 WHERE id = ?
@@ -132,7 +132,7 @@ public class JdbcCatalogDao implements CatalogDao{
                    DISTINCT c.id,
                    c.title,
                    c.owner_id,
-                   c.prev_catalgo_id,
+                   c.prev_catalog_id,
                    c.date_of_create
                 FROM catalog c
                 INNER JOIN catalogs_in_user_order ciuo

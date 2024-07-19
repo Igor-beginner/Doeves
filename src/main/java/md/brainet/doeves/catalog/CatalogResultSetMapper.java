@@ -16,7 +16,7 @@ public class CatalogResultSetMapper implements ResultSetExtractor<Catalog> {
         return rs.next() ?  new Catalog(
                 rs.getInt("id"),
                 rs.getString("title"),
-                rs.getInt("order_number"),
+                rs.getInt("prev_catalog_id"),
                 rs.getInt("owner_id"),
                 rs.getTimestamp("date_of_create").toLocalDateTime()
         ) : null;
