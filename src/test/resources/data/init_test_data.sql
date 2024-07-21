@@ -1,6 +1,9 @@
 DELETE FROM task;
 DELETE FROM users;
 DELETE FROM verification_details;
+DELETE FROM catalog;
+
+SELECT SETVAL('catalog_id_seq', 1);
 
 INSERT INTO verification_details(id, code, expire_date, missing_attempts)
 VALUES (1, 231231, '3024-05-26T21:43:19.229697', 5);

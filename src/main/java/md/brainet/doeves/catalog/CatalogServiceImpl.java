@@ -48,10 +48,7 @@ public class CatalogServiceImpl implements CatalogService {
 
     @Override
     public void changeName(Integer catalogId, String newName) {
-        boolean updated = catalogDao.updateNameByCatalogId(catalogId, newName);
-        if(!updated) {
-            throw new CatalogNotFoundException(catalogId);
-        }
+        catalogDao.updateNameByCatalogId(catalogId, newName);
     }
 
     @Override

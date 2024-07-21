@@ -8,6 +8,7 @@ import java.util.Optional;
 
 public interface CatalogDao {
     Catalog insertCatalog(Integer ownerId, CatalogDTO catalogDTO);
+    Integer selectFirstCatalogIdByOwnerId(Integer ownerId);
     Optional<Catalog> selectCatalogById(Integer id);
     List<Catalog> selectAllCatalogsByOwnerId(Integer ownerId, Integer offset, Integer limit);
     void updateOrderNumberByCatalogId(Integer prevCatalogId, Integer catalogId);

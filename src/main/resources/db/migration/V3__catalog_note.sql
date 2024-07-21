@@ -1,6 +1,6 @@
 CREATE TABLE catalog(
     id SERIAL PRIMARY KEY,
-    prev_catalog_id INTEGER REFERENCES catalog(id),
+    prev_catalog_id INTEGER REFERENCES catalog(id) DEFAULT NULL,
     owner_id INTEGER
         REFERENCES users(id) ON DELETE CASCADE,
     title VARCHAR(40),

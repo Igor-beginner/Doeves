@@ -3,6 +3,7 @@ package md.brainet.doeves.catalog;
 
 import md.brainet.doeves.note.NotePreview;
 import md.brainet.doeves.note.NotePreviewListResultSetMapper;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,7 +35,7 @@ public class JdbcCatalogDao implements CatalogDao{
         var sql = """
                 INSERT INTO catalog(title, prev_catalog_id, owner_id)
                 VALUES(?, ?, ?)
-                RETURNING id, title, date_of_create;
+                RETURNING id, title, date_of_create, prev_catalog_id, owner_id;
                 """;
 
         Integer firstNoteId = selectFirstCatalogIdByOwnerId(ownerId);
@@ -59,7 +60,8 @@ public class JdbcCatalogDao implements CatalogDao{
         return catalog;
     }
 
-    private Integer selectFirstCatalogIdByOwnerId(Integer ownerId) {
+    @Override
+    public Integer selectFirstCatalogIdByOwnerId(Integer ownerId) {
         var sql = """
                 SELECT c.id
                 FROM catalog c
@@ -85,14 +87,16 @@ public class JdbcCatalogDao implements CatalogDao{
         var prevIdAsNSql = """
                 UPDATE catalog
                 SET prev_catalog_id = ?
-                WHERE catalog_id = ?;
+                WHERE id = ?;
                 """;
 
-        jdbcTemplate.update(
-                prevIdAsNSql,
-                prevId,
-                catalogId
-        );
+        if(catalogId != null) {
+            jdbcTemplate.update(
+                    prevIdAsNSql,
+                    prevId,
+                    catalogId
+            );
+        }
     }
 
     @Override
@@ -116,12 +120,12 @@ public class JdbcCatalogDao implements CatalogDao{
     public List<Catalog> selectAllCatalogsByOwnerId(Integer ownerId, Integer offset, Integer limit) {
         var sql = """
                 WITH RECURSIVE catalogs_in_user_order AS (
-                    SELECT id, prev_catalog_id, owner_id, 0 as level
-                    FROM catalog
+                    SELECT id, prev_catalog_id, c.owner_id, 0 as level
+                    FROM catalog c
                     WHERE prev_catalog_id IS NULL
-                    AND owner_id = ?
+                    AND c.owner_id = ?
                     UNION 
-                    SELECT c.id, c.prev_catalog_id, owner_id, c.level + 1 as level
+                    SELECT c.id, c.prev_catalog_id, c.owner_id, ciuo.level + 1 as level
                     FROM catalog c
                     JOIN catalogs_in_user_order ciuo
                     ON ciuo.id = c.prev_catalog_id
@@ -133,11 +137,15 @@ public class JdbcCatalogDao implements CatalogDao{
                    c.title,
                    c.owner_id,
                    c.prev_catalog_id,
-                   c.date_of_create
+                   c.date_of_create,
+                   ciuo.level
                 FROM catalog c
                 INNER JOIN catalogs_in_user_order ciuo
                 ON ciuo.id = c.id
                 AND ciuo.owner_id = c.owner_id
+                INNER JOIN users u 
+                ON u.id = c.owner_id
+                WHERE u.root_catalog_id != c.id
                 ORDER BY ciuo.level
                 OFFSET ?
                 LIMIT ?;
@@ -149,37 +157,72 @@ public class JdbcCatalogDao implements CatalogDao{
     @Override
     @Transactional
     public void updateOrderNumberByCatalogId(Integer prevCatalogId, Integer catalogId) {
-        extractCatalogIdByRewritingLinks(prevCatalogId, catalogId);
+        extractCatalogIdByRewritingLinks(catalogId);
         injectCatalogIdAsNextByRewritingLinksAfter(prevCatalogId, catalogId);
     }
 
-    private void extractCatalogIdByRewritingLinks(Integer prevCatalogId,
-                                                  Integer catalogId) {
+    private void extractCatalogIdByRewritingLinks(Integer catalogId) {
 
         Integer nextCatalogIdForRewritingNote = findNextIdFor(catalogId);
+        Integer prevCatalogId = findPrevCatalogIdByCatalogId(catalogId);
         updatePrevIdAs(prevCatalogId, nextCatalogIdForRewritingNote);
     }
 
     private void injectCatalogIdAsNextByRewritingLinksAfter(Integer prevCatalogId,
                                                             Integer catalogId) {
 
-        Integer nextId = findNextIdFor(catalogId);
+        Integer nextId = prevCatalogId == null
+                ? findFirstCatalogIdFromOwnerCatalogId(catalogId)
+                : findNextIdFor(prevCatalogId);
         updatePrevIdAs(catalogId, nextId);
         updatePrevIdAs(prevCatalogId, catalogId);
     }
 
-    private Integer findNextIdFor(Integer catalogId) {
-        var findingNextCatalogIdSql = """
+    private Integer findFirstCatalogIdFromOwnerCatalogId(Integer catalogId) {
+        var sql = """
                 SELECT id
-                FROM catalog
-                WHERE prev_id = ?;
+                FROM catalog c
+                WHERE prev_catalog_id IS NULL
+                AND owner_id = (
+                    SELECT owner_id
+                    FROM catalog
+                    WHERE id = ?
+                )
+                AND id != (
+                    SELECT DISTINCT root_catalog_id
+                    FROM users u
+                    WHERE u.id = c.owner_id
+                );
                 """;
 
         return jdbcTemplate.queryForObject(
-                findingNextCatalogIdSql,
+                sql,
                 Integer.class,
                 catalogId
         );
+    }
+
+    public Integer findNextIdFor(Integer catalogId) {
+        var findingNextCatalogIdSql = """
+                SELECT id
+                FROM catalog
+                WHERE prev_catalog_id = ?;
+                """;
+
+        Integer prevId;
+
+        try {
+
+            prevId = jdbcTemplate.queryForObject(
+                    findingNextCatalogIdSql,
+                    Integer.class,
+                    catalogId
+            );
+        } catch (EmptyResultDataAccessException e) {
+            prevId = null;
+        }
+
+        return prevId;
     }
 
 
@@ -209,18 +252,27 @@ public class JdbcCatalogDao implements CatalogDao{
         return jdbcTemplate.update(sql, catalogId) > 0;
     }
 
-    private Integer findPrevCatalogIdByCatalogId(Integer catalogId){
+    public Integer findPrevCatalogIdByCatalogId(Integer catalogId){
         var sql = """
-                SELECT prev_id
+                SELECT prev_catalog_id
                 FROM catalog
                 WHERE id = ?;
                 """;
 
-        return jdbcTemplate.queryForObject(
-                sql,
-                Integer.class,
-                catalogId
-        );
+        Integer prevId;
+
+        try {
+
+            prevId = jdbcTemplate.queryForObject(
+                    sql,
+                    Integer.class,
+                    catalogId
+            );
+        } catch (EmptyResultDataAccessException e) {
+            prevId = null;
+        }
+
+        return prevId;
     }
 
 
@@ -240,15 +292,17 @@ public class JdbcCatalogDao implements CatalogDao{
                   AND nfciuo.catalog_id = nco.catalog_id
                 )
                 SELECT
-                    n.id,
-                    n.title,
-                    n.description,
-                    n.date_of_create,
-                    nfciuo.catalog_id,
-                    NULL owner_id
+                    n.id n_id,
+                    n.title n_title,
+                    n.description n_description,
+                    n.date_of_create n_date_of_create,
+                    c.id c_id,
+                    c.title c_title
                 FROM notes_from_catalog_in_user_order nfciuo
                 JOIN note n
                 ON n.id = nfciuo.note_id
+                JOIN catalog c 
+                ON c.id = nfciuo.catalog_id
                 ORDER BY nfciuo.level
                 OFFSET ?
                 LIMIT ?;
