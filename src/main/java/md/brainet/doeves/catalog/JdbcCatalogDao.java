@@ -74,11 +74,19 @@ public class JdbcCatalogDao implements CatalogDao{
                 );
                 """;
 
-        return jdbcTemplate.queryForObject(
-                sql,
-                Integer.class,
-                ownerId
-        );
+
+        Integer firstCatalogId;
+
+        try {
+            firstCatalogId = jdbcTemplate.queryForObject(
+                    sql,
+                    Integer.class,
+                    ownerId
+            );
+        } catch (EmptyResultDataAccessException e) {
+            firstCatalogId = null;
+        }
+        return firstCatalogId;
     }
 
 

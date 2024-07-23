@@ -23,80 +23,52 @@ class CatalogServiceTest extends IntegrationTestBase {
     @Test
     void createCatalog_userExits_expectCorrectCommit() {
         //given
-//        var payload = new CatalogDTO(
-//                "Admin catalog",
-//                1
-//        );
-//
-//        //when
-//        var catalog = catalogService.createCatalog(2, payload);
-//
-//        //then
-//        var catalogs = catalogDao.selectAllCatalogsByOwnerId(2, 0, 10);
-//        assertEquals(1, catalogs.size());
-//        assertEquals(catalog.id(), catalogs.get(0).id());
-    }
+        var payload = new CatalogDTO("Admin catalog");
 
-    @Test
-    void createCatalog_orderNumberIsNotPresent_expectAssigningOrderNumberZero() {
-//        //given
-//        var payload = new CatalogDTO(
-//                "Admin catalog",
-//                null
-//        );
-//
-//        //when
-//        var catalog = catalogService.createCatalog(1, payload);
-//
-//        //then
-//        assertEquals(0, catalog.orderNumber());
-//        var catalogs = catalogDao.selectAllCatalogsByOwnerId(1, 0, 10);
-//        assertEquals("Admin catalog", catalogs.get(0).name());
-//        assertEquals(0, catalogs.get(0).orderNumber());
-//        assertEquals(1, catalogs.get(1).orderNumber());
-//        assertEquals(2, catalogs.get(2).orderNumber());
+        //when
+        var catalog = catalogService.createCatalog(2, payload);
+
+        //then
+        var catalogs = catalogDao.selectAllCatalogsByOwnerId(2, 0, 10);
+        assertEquals(1, catalogs.size());
+        assertEquals(catalog.id(), catalogs.get(0).id());
     }
 
     @Test
     void createCatalog_userNotExits_expectUserNotFoundException() {
-//        //given
-//        var payload = new CatalogDTO(
-//                "Admin catalog",
-//                1
-//        );
-//
-//        //when
-//        Executable catalog = () -> catalogService.createCatalog(223, payload);
-//
-//        //then
-//        assertThrows(UserNotFoundException.class, catalog);
+        //given
+        var payload = new CatalogDTO("Admin catalog");
+
+        //when
+        Executable catalog = () -> catalogService.createCatalog(223, payload);
+
+        //then
+        assertThrows(UserNotFoundException.class, catalog);
     }
 
     @Test
     void findCatalog_idExists_expectCatalog() {
-//        //given
-//        final int catalogId = 1;
-//        final int expectedOwnerId = 1;
-//        final int expectedOrderNumber = 1;
-//
-//        //when
-//        var catalog = catalogService.findCatalog(catalogId);
-//
-//        //then
-//        assertEquals(expectedOwnerId, catalog.ownerId());
-//        assertEquals(expectedOrderNumber, catalog.orderNumber());
+        //given
+        final int catalogId = 10;
+        final int expectedOwnerId = 1;
+
+        //when
+        var catalog = catalogService.findCatalog(catalogId);
+
+        //then
+        assertEquals(expectedOwnerId, catalog.ownerId());
     }
 
     @Test
     void findCatalog_idNotExists_expectCatalogNotFoundException() {
         //given
-        final int catalogId = 1;
+        final int catalogId = 10323;
 
         //when
-        Executable catalog = () -> catalogService.findCatalog(catalogId);
+        Executable executable = () -> catalogService.findCatalog(catalogId);
 
         //then
-        assertThrows(CatalogNotFoundException.class, catalog);
+        assertThrows(CatalogNotFoundException.class, executable);
     }
 
     @Test
@@ -108,7 +80,7 @@ class CatalogServiceTest extends IntegrationTestBase {
         var catalogs = catalogService.fetchAllOwnerCatalogs(ownerId, 0, 10);
 
         //then
-        assertEquals(2, catalogs.size());
+        assertEquals(7, catalogs.size());
     }
 
     @Test
@@ -125,16 +97,16 @@ class CatalogServiceTest extends IntegrationTestBase {
 
     @Test
     void changeOrderNumber_catalogIdExists_expectNewOrderNumber() {
-//        //given
-//        final int catalogId = 1;
-//        final int newOrderNumber = 10;
-//
-//        //when
-//        catalogService.rewriteLinkAsPrevCatalogIdFor(catalogId, newOrderNumber);
-//
-//        //then
-//        var catalog = catalogDao.selectCatalogById(catalogId);
-//        assertEquals(newOrderNumber, catalog.get().orderNumber());
+        //given
+        final Integer catalogId = 15;
+        final Integer newCatalogId = null;
+
+        //when
+        catalogService.rewriteLinkAsPrevCatalogIdFor(catalogId, newCatalogId);
+
+        //then
+        var catalog = catalogDao.selectAllCatalogsByOwnerId(1, 0, 10);
+        assertEquals(catalogId, catalog.get(0).id());
     }
 
     @Test
@@ -153,7 +125,7 @@ class CatalogServiceTest extends IntegrationTestBase {
     @Test
     void removeCatalog_catalogIdExists_expectRemoved() {
         //given
-        final int catalogId = 1;
+        final int catalogId = 10;
 
         //when
         catalogService.removeCatalog(catalogId);
@@ -176,15 +148,15 @@ class CatalogServiceTest extends IntegrationTestBase {
     }
 
     @Test
-    void fetchAllCatalogNotes_catalogIdExists_expectTwoNotes() {
+    void fetchAllCatalogNotes_catalogIdExists_expectThreeNotes() {
         //given
-        final int catalogId = 1;
+        final int catalogId = 10;
 
         //when
         var catalogs = catalogService.fetchAllCatalogNotes(catalogId, 0, 10);
 
         //then
-        assertEquals(2, catalogs.size());
+        assertEquals(3, catalogs.size());
     }
 
     @Test
