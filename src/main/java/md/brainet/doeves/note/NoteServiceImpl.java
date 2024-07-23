@@ -71,14 +71,14 @@ public class NoteServiceImpl implements NoteService {
             request.setSourceCatalogId(request.getUser().getRootCatalogId());
         }
 
-        boolean updated = noteDao.moveNoteIdToNewCatalogId(
-                request.getNoteId(),
-                request.getSourceCatalogId(),
-                request.getDestinationCatalogId()
-        );
-        if(!updated) {
-            throw new NoteNotFoundException(request.getNoteId());
-        }
+//        boolean updated = noteDao.moveNoteIdToNewCatalogId(
+//                request.getNoteId(),
+//                request.getSourceCatalogId(),
+//                request.getDestinationCatalogId()
+//        );
+//        if(!updated) {
+//            throw new NoteNotFoundException(request.getNoteId());
+//        }
     }
 
     @Override

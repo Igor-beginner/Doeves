@@ -12,4 +12,15 @@ public record NotePreview(
         CatalogPreview catalog,
         LocalDateTime dateOfCreate
 ) {
+
+    @Override
+    public boolean equals(Object obj) {
+        NotePreview preview = (NotePreview) obj;
+        return id.equals(preview.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return id;
+    }
 }

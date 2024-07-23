@@ -1,6 +1,7 @@
 package md.brainet.doeves.note;
 
 import md.brainet.doeves.user.User;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,8 +31,8 @@ public class JdbcNoteDao implements NoteDao {
     @Transactional
     public Optional<Note> insertNote(User user, NoteDTO noteDTO) {
         var sql = """
-                INSERT INTO note(title, description, catalog_id)
-                VALUES(?, ?, ?)
+                INSERT INTO note(title, description)
+                VALUES(?, ?)
                 RETURNING *;
                 """;
 
@@ -40,9 +41,7 @@ public class JdbcNoteDao implements NoteDao {
                         sql,
                         noteMapper,
                         noteDTO.getName(),
-                        noteDTO.getDescription(),
-                        noteDTO.getCatalogId(),
-                        user.getId()
+                        noteDTO.getDescription()
                 )
         );
 
@@ -54,7 +53,9 @@ public class JdbcNoteDao implements NoteDao {
 
         int noteId = concreteNote.id();
 
-        insertIntoNoteCatalogOrderingByRewritingLinks(noteId, noteDTO.getCatalogId());
+        if(noteDTO.getCatalogId() != null) {
+            insertIntoNoteCatalogOrderingByRewritingLinks(noteId, noteDTO.getCatalogId());
+        }
         insertIntoNoteCatalogOrderingByRewritingLinks(noteId, user.getRootCatalogId());
         return note;
     }
@@ -62,7 +63,7 @@ public class JdbcNoteDao implements NoteDao {
     @Override
     @Transactional
     public boolean updateOrderNumberByNoteId(Integer prevNoteId, Integer noteId, Integer catalogId) {
-        extractNoteIdByRewritingLinks(prevNoteId, noteId, catalogId);
+        extractNoteIdByRewritingLinks(noteId, catalogId);
         injectNoteIdAsNextByRewritingLinksAfter(prevNoteId, noteId, catalogId);
         return true;
     }
@@ -98,26 +99,30 @@ public class JdbcNoteDao implements NoteDao {
                 AND catalog_id = ?;
                 """;
 
-        Integer prevNoteId = findPrevIdFor(noteId);
+        Integer prevNoteId = findPrevIdFor(noteId, catalogId);
 
-        int nextNoteIdOfDeletingNote = findNextIdFor(noteId, catalogId);
+        Integer nextNoteIdOfDeletingNote = findNextIdFor(noteId, catalogId);
 
-        updatePrevIdAs(prevNoteId, nextNoteIdOfDeletingNote, catalogId);
+        if(nextNoteIdOfDeletingNote != null) {
+            updatePrevIdAs(prevNoteId, nextNoteIdOfDeletingNote, catalogId);
+        }
 
         return jdbcTemplate.update(sql, noteId, catalogId) > 0;
     }
 
-    private Integer findPrevIdFor(Integer noteId) {
+    public Integer findPrevIdFor(Integer noteId, Integer catalogId) {
         var sql = """
                 SELECT prev_note_id
                 FROM note_catalog_ordering nco
-                WHERE note_id = ?;
+                WHERE note_id = ?
+                AND catalog_id = ?;
                 """;
 
         return jdbcTemplate.queryForObject(
                 sql,
                 Integer.class,
-                noteId
+                noteId,
+                catalogId
         );
     }
 
@@ -138,33 +143,70 @@ public class JdbcNoteDao implements NoteDao {
 
     @Override
     @Transactional
-    public boolean moveNoteIdToNewCatalogId(Integer noteId,
+    public void moveNoteIdToNewCatalogId(Integer noteId,
                                             Integer currentCatalogId,
                                             Integer newCatalogId) {
 
-        Integer firstNoteIdFromNewCatalog = selectFirstNoteIdFromCatalog(newCatalogId);
+        extractNoteIdByRewritingLinks(noteId, currentCatalogId);
+        injectNoteIdAsNextByRewritingLinksAfter(null, noteId, newCatalogId);
+        var sql = """
+                UPDATE note_catalog_ordering
+                SET catalog_id = ?
+                WHERE catalog_id = ?
+                AND note_id = ?
+                """;
 
-        if(firstNoteIdFromNewCatalog == null) {
-            return false;
-        }
-
-        updatePrevIdAs(noteId, firstNoteIdFromNewCatalog, newCatalogId);
-
-        updatePrevIdAs(null, noteId, currentCatalogId);
-
-        return true;
+        jdbcTemplate.update(
+                sql,
+                newCatalogId,
+                currentCatalogId,
+                noteId
+        );
     }
 
     @Override
     public List<NotePreview> selectAllNotesByOwnerIdIncludingCatalogs(Integer ownerId, Integer offset, Integer limit) {
-        var sql = getCatalogSelectingRecursiveSql()
-                .formatted("""
-                        WHERE nfciuo.catalog_id IN((
-                            SELECT id
-                            FROM catalog
-                            WHERE owner_id = ?
-                        ))
-                        """);
+        var sql = """
+                WITH RECURSIVE notes_from_catalog_in_user_order AS (
+                  SELECT note_id, catalog_id, 0 as level
+                  FROM note_catalog_ordering
+                  WHERE prev_note_id IS NULL
+                  AND catalog_id = (
+                    SELECT root_catalog_id
+                    FROM users
+                    WHERE id = ?
+                  )
+                  UNION
+                  SELECT nco.note_id, nco.catalog_id, nfciuo.level + 1 AS level
+                  FROM note_catalog_ordering nco
+                  JOIN notes_from_catalog_in_user_order nfciuo
+                  ON nfciuo.note_id = nco.prev_note_id
+                  AND nfciuo.catalog_id = nco.catalog_id
+                )
+                SELECT
+                    n.id n_id,
+                    n.title n_title,
+                    n.description n_description,
+                    n.date_of_create n_date_of_create,
+                    c_view.id c_id,
+                    c_view.title c_title,
+                    u.root_catalog_id u_root_catalog_id
+                FROM note n
+                JOIN notes_from_catalog_in_user_order nfciuo
+                ON n.id = nfciuo.note_id
+                LEFT JOIN catalog c
+                ON nfciuo.catalog_id = c.id
+                JOIN users u
+                ON u.id = c.owner_id
+                LEFT JOIN note_catalog_ordering nco
+                ON nco.note_id = n.id
+                AND nco.catalog_id != u.root_catalog_id
+                LEFT JOIN catalog c_view
+                ON c_view.id = nco.catalog_id
+                ORDER BY nfciuo.level
+                OFFSET ?
+                LIMIT ?
+                """;
 
         return jdbcTemplate.query(
                 sql,
@@ -176,14 +218,54 @@ public class JdbcNoteDao implements NoteDao {
     }
 
     @Override
-    public List<NotePreview> selectAllNotesByOwnerIdWithoutCatalogs(Integer rootCatalogId, Integer offset, Integer limit) {
-        var sql = getCatalogSelectingRecursiveSql()
-                .formatted("WHERE nfciuo.catalog_id = ?");
+    public List<NotePreview> selectAllNotesByOwnerIdWithoutCatalogs(Integer ownerId, Integer offset, Integer limit) {
+        var sql = """
+                WITH RECURSIVE notes_from_catalog_in_user_order AS (
+                  SELECT note_id, catalog_id, 0 as level
+                  FROM note_catalog_ordering
+                  WHERE prev_note_id IS NULL
+                  AND catalog_id = (
+                    SELECT root_catalog_id
+                    FROM users
+                    WHERE id = ?
+                  )
+                  UNION
+                  SELECT nco.note_id, nco.catalog_id, nfciuo.level + 1 AS level
+                  FROM note_catalog_ordering nco
+                  JOIN notes_from_catalog_in_user_order nfciuo
+                  ON nfciuo.note_id = nco.prev_note_id
+                  AND nfciuo.catalog_id = nco.catalog_id
+                )
+                SELECT
+                    n.id n_id,
+                    n.title n_title,
+                    n.description n_description,
+                    n.date_of_create n_date_of_create,
+                    c.id c_id,
+                    c.title c_title,
+                    u.root_catalog_id u_root_catalog_id
+                FROM note n
+                JOIN notes_from_catalog_in_user_order nfciuo
+                ON n.id = nfciuo.note_id
+                LEFT JOIN catalog c
+                ON nfciuo.catalog_id = c.id
+                JOIN users u
+                ON u.id = c.owner_id
+                WHERE nfciuo.note_id NOT IN (
+                    SELECT DISTINCT note_id
+                    FROM note_catalog_ordering nco
+                    WHERE nco.catalog_id != u.root_catalog_id
+                    AND nco.note_id = n.id
+                )
+                ORDER BY nfciuo.level
+                OFFSET ?
+                LIMIT ?
+                """;
 
         return jdbcTemplate.query(
                 sql,
                 notePreviewListMapper,
-                rootCatalogId,
+                ownerId,
                 offset,
                 limit
         );
@@ -221,17 +303,20 @@ public class JdbcNoteDao implements NoteDao {
                   AND nfciuo.catalog_id = nco.catalog_id
                 )
                 SELECT
-                    DISTINCT n.id n_id,
+                    n.id n_id,
                     n.title n_title,
                     n.description n_description,
                     n.date_of_create n_date_of_create,
                     c.id c_id,
-                    c.title c_title
+                    c.title c_title,
+                    u.root_catalog_id u_root_catalog_id
                 FROM note n
-                LEFT JOIN catalog c
-                ON n.catalog_id = c.id
                 JOIN notes_from_catalog_in_user_order nfciuo
                 ON n.id = nfciuo.note_id
+                LEFT JOIN catalog c
+                ON nfciuo.catalog_id = c.id
+                JOIN users u
+                ON u.id = c.owner_id
                 WHERE %s
                 ORDER BY nfciuo.level
                 OFFSET ?
@@ -241,7 +326,9 @@ public class JdbcNoteDao implements NoteDao {
 
     private void insertIntoNoteCatalogOrderingByRewritingLinks(Integer noteId, Integer catalogId) {
         Integer firstNoteId = selectFirstNoteIdFromCatalog(catalogId);
-        updatePrevIdAs(noteId, firstNoteId, catalogId);
+        if(firstNoteId != null) {
+            updatePrevIdAs(noteId, firstNoteId, catalogId);
+        }
         insertIntoNoteCatalogOrdering(noteId, catalogId);
     }
 
@@ -260,22 +347,46 @@ public class JdbcNoteDao implements NoteDao {
         );
     }
 
-    private void extractNoteIdByRewritingLinks(Integer prevNoteId,
-                                                  Integer noteId,
-                                                  Integer catalogId) {
+    private void extractNoteIdByRewritingLinks(Integer noteId,
+                                               Integer catalogId) {
 
         Integer nextNoteIdForRewritingNote = findNextIdFor(noteId, catalogId);
+        Integer prevNoteIdForRewritingNote = findPrevIdFor(noteId, catalogId);
+        updatePrevIdAs(prevNoteIdForRewritingNote, nextNoteIdForRewritingNote, catalogId);
 
-        updatePrevIdAs(prevNoteId, nextNoteIdForRewritingNote, catalogId);
     }
-
     private void injectNoteIdAsNextByRewritingLinksAfter(Integer prevNoteId,
                                                             Integer noteId,
                                                             Integer catalogId) {
 
-        Integer nextId = findNextIdFor(noteId, catalogId);
-        updatePrevIdAs(noteId, nextId, catalogId);
+        Integer nextId = prevNoteId == null
+                ? findFirstNoteIdFromCatalogId(catalogId)
+                : findNextIdFor(prevNoteId, catalogId);
+        if(nextId != null) {
+            updatePrevIdAs(noteId, nextId, catalogId);
+        }
         updatePrevIdAs(prevNoteId, noteId, catalogId);
+    }
+
+    private Integer findFirstNoteIdFromCatalogId(Integer catalogId) {
+        var sql = """
+                SELECT note_id
+                FROM note_catalog_ordering
+                WHERE catalog_id = ?
+                AND prev_note_id IS NULL;
+                """;
+
+        Integer nextId;
+        try {
+            nextId = jdbcTemplate.queryForObject(
+                    sql,
+                    Integer.class,
+                    catalogId
+            );
+        } catch (EmptyResultDataAccessException e) {
+            nextId = null;
+        }
+        return nextId;
     }
 
     private Integer findNextIdFor(Integer noteId, Integer catalogId) {
@@ -285,13 +396,18 @@ public class JdbcNoteDao implements NoteDao {
                 WHERE prev_note_id = ?
                 AND catalog_id = ?;
                 """;
-
-        return jdbcTemplate.queryForObject(
-                findingNextNoteIdSql,
-                Integer.class,
-                noteId,
-                catalogId
-        );
+        Integer nextId;
+        try {
+            nextId = jdbcTemplate.queryForObject(
+                    findingNextNoteIdSql,
+                    Integer.class,
+                    noteId,
+                    catalogId
+            );
+        } catch (EmptyResultDataAccessException e) {
+            nextId = null;
+        }
+        return nextId;
     }
 
     private void updatePrevIdAs(Integer prevId,
@@ -311,7 +427,7 @@ public class JdbcNoteDao implements NoteDao {
         );
     }
 
-    private Integer selectFirstNoteIdFromCatalog(Integer catalogId) {
+    public Integer selectFirstNoteIdFromCatalog(Integer catalogId) {
         var sql = """
                 SELECT note_id
                 FROM note_catalog_ordering
@@ -319,10 +435,17 @@ public class JdbcNoteDao implements NoteDao {
                 AND prev_note_id IS NULL
                 """;
 
-        return jdbcTemplate.queryForObject(
-                sql,
-                Integer.class,
-                catalogId
-        );
+        Integer firstNoteId;
+
+        try {
+            firstNoteId = jdbcTemplate.queryForObject(
+                    sql,
+                    Integer.class,
+                    catalogId
+            );
+        } catch (EmptyResultDataAccessException e) {
+            firstNoteId = null;
+        }
+        return firstNoteId;
     }
 }

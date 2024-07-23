@@ -103,4 +103,8 @@ public class User implements UserDetails {
     public Integer getRootCatalogId() {
         return rootCatalogId;
     }
+
+    public void setRootCatalogId(Integer rootCatalogId) {
+        this.rootCatalogId = rootCatalogId;
+    }
 }

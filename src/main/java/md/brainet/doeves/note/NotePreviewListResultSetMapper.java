@@ -7,36 +7,34 @@ import org.springframework.stereotype.Service;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Service
 public class NotePreviewListResultSetMapper implements ResultSetExtractor<List<NotePreview>> {
 
     @Override
     public List<NotePreview> extractData(ResultSet rs) throws SQLException, DataAccessException {
-        List<NotePreview> notePreviews = new ArrayList<>();
+        Set<NotePreview> notePreviews = new LinkedHashSet<>();
         while (rs.next()) {
             CatalogPreview catalogPreview = null;
-
-            if(rs.getObject("c_id") != null) {
+            Integer catalogId = (Integer) rs.getObject("c_id");
+            if(catalogId != null
+                && rs.getObject("u_root_catalog_id") != catalogId) {
                 catalogPreview = new CatalogPreview(
-                        rs.getInt("c_id"),
+                        catalogId,
                         rs.getString("c_title")
                 );
             }
-
-            notePreviews.add(
-                    new NotePreview(
-                            rs.getInt("n_id"),
-                            rs.getString("n_title"),
-                            rs.getString("n_description"),
-                            catalogPreview,
-                            rs.getTimestamp("n_date_of_create").toLocalDateTime()
-                    )
+            var notePreview = new NotePreview(
+                    rs.getInt("n_id"),
+                    rs.getString("n_title"),
+                    rs.getString("n_description"),
+                    catalogPreview,
+                    rs.getTimestamp("n_date_of_create").toLocalDateTime()
             );
+            notePreviews.add(notePreview);
         }
 
-        return notePreviews;
+        return notePreviews.stream().toList();
     }
 }

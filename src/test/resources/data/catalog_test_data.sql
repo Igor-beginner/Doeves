@@ -24,10 +24,24 @@ VALUES(2, 'Some Note Title2', 'Some Description here2');
 INSERT INTO note(id, title, description)
 VALUES(3, 'Some Note Title2', 'Some Description here2');
 
+INSERT INTO note(id, title, description)
+VALUES(4, 'Some Note Title4', 'Some Description here2213');
+
+INSERT INTO note(id, title, description)
+VALUES(5, 'Some Note Title5', 'Some Description here2213');
+
+
 INSERT INTO note_catalog_ordering(note_id, prev_note_id, catalog_id)
 VALUES(1, 3, 10),
       (2, 1, 10),
       (1, NULL, 12),
       (2, 1, 12),
       (3, 2, 12),
-      (3, NULL, 10);
+      (3, NULL, 10),
+      (1, NULL, 2),
+      (4, 1, 2),
+      (3, 4, 2),
+      (2, 3, 2),
+      (5, 2, 2);
+
+SELECT SETVAL('note_id_seq', (SELECT MAX(id) FROM note));

@@ -1,15 +1,14 @@
 package md.brainet.doeves.note;
 
 import md.brainet.doeves.IntegrationTestBase;
+import md.brainet.doeves.catalog.CatalogDTO;
 import md.brainet.doeves.catalog.CatalogDao;
+import md.brainet.doeves.user.UserDao;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.dao.DataIntegrityViolationException;
-
-import java.util.HashMap;
-import java.util.stream.Collectors;
+import org.springframework.dao.EmptyResultDataAccessException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -17,10 +16,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class NoteDaoTest extends IntegrationTestBase {
 
     @Autowired
-    NoteDao noteDao;
+    JdbcNoteDao noteDao;
 
     @Autowired
     CatalogDao catalogDao;
+
+    @Autowired
+    UserDao userDao;
 
 
     @Test
@@ -48,92 +50,143 @@ class NoteDaoTest extends IntegrationTestBase {
     }
 
     @Test
-    void insertNote_catalogExists_noteInserted() {
+    void insertNote() {
         //given
-        final int catalogId = 1;
-        final int expectedCatalogDataCount = 1;
-        var noteDTO = new NoteDTO("SomeName", null, catalogId, 0);
+        final int expectedId = 6;
+
+        var note = new NoteDTO();
+        note.setCatalogId(10);
+        var firstNoteId = noteDao.selectFirstNoteIdFromCatalog(10);
 
         //when
-        var note = noteDao.insertNote(1, noteDTO);
+        var actualId = noteDao.insertNote(
+                userDao.selectUserById(1).get(),
+                note)
+                .get().id();
 
         //then
-        var notes = catalogDao.selectAllNotesByCatalogId(catalogId, 0, 10);
-        assertEquals(expectedCatalogDataCount, notes.size());
-        assertTrue(note.isPresent());
+        assertEquals(actualId, noteDao.findPrevIdFor(firstNoteId, note.getCatalogId()));
+        assertEquals(expectedId, actualId);
     }
 
     @Test
-    void insertNote_catalogNotExists_noteNoteInserted() {
+    void updateOrderNumberByNoteId_changingNotesNotOnEdges() {
         //given
+        final int prevNoteId = 1;
+        final Integer nextReplacingNoteId = 2;
+
+        final Integer prevInsteadNoteId = null;
+        final int currentNoteId = 3;
+        final int nextInsteadNoteId = 1;
+
         final int catalogId = 10;
-        final int expectedCatalogDataCount = 0;
-        var noteDTO = new NoteDTO("SomeName", null, catalogId, 0);
 
         //when
-        Executable executable = () -> noteDao.insertNote(1, noteDTO);
+        noteDao.updateOrderNumberByNoteId(prevNoteId, currentNoteId, catalogId);
 
         //then
-        var notes = catalogDao.selectAllNotesByCatalogId(catalogId, 0, 10);
-        assertEquals(expectedCatalogDataCount, notes.size());
-        assertThrows(DataIntegrityViolationException.class, executable);
-    }
+        var insteadNote = noteDao.selectByNoteId(currentNoteId);
+        assertEquals(prevNoteId, noteDao.findPrevIdFor(insteadNote.get().id(), catalogId));
 
+        var nextCurrentNote = noteDao.selectByNoteId(nextInsteadNoteId);
+        assertEquals(prevInsteadNoteId, noteDao.findPrevIdFor(nextCurrentNote.get().id(), catalogId));
+
+        var nextPrevNote = noteDao.selectByNoteId(nextReplacingNoteId);
+        assertEquals(currentNoteId, noteDao.findPrevIdFor(nextPrevNote.get().id(), catalogId));
+
+        var allNotes = noteDao.selectAllNotesByOwnerIdIncludingCatalogs(1, 0, 10);
+        assertEquals(5, allNotes.size());
+    }
 
     @Test
-    void insertNote_orderNumberIsZero_expectThatRestNotesWasShifted() {
+    void updateOrderNumberByCatalogId_fromMiddleToStart() {
         //given
-        final int catalogId = 2;
-        var noteDTO = new NoteDTO("SomeName", null, catalogId, 0);
+        final Integer prevNoteId = null;
+        final Integer nextReplacingNoteId = 3;
 
-        var notesUntilInsert = new HashMap<>(
-                catalogDao.selectAllNotesByCatalogId(catalogId, 0, 10)
-                        .stream().collect(Collectors.toMap(
-                                Note::id,
-                                note -> noteDao.selectOrderNumberByNoteIdAndContext(
-                                note.id(),
-                                ViewContext.CATALOG
-                        ).get()
-                ))
-        );
+        final Integer prevInsteadNoteId = 3;
+        final int currentNoteId = 1;
+        final int nextInsteadNoteId = 2;
+
+        final int catalogId = 10;
 
         //when
-        var note = noteDao.insertNote(1, noteDTO).get();
+        noteDao.updateOrderNumberByNoteId(prevNoteId, currentNoteId, catalogId);
 
         //then
-        assertEquals(
-                noteDTO.orderNumber(),
-                noteDao.selectOrderNumberByNoteIdAndContext(note.id(), ViewContext.CATALOG)
-                        .get()
-        );
+        var insteadNote = noteDao.selectByNoteId(currentNoteId);
+        assertEquals(prevNoteId, noteDao.findPrevIdFor(insteadNote.get().id(), catalogId));
 
-        notesUntilInsert.put(note.id(), noteDTO.orderNumber());
+        var nextCurrentNote = noteDao.selectByNoteId(nextInsteadNoteId);
+        assertEquals(prevInsteadNoteId, noteDao.findPrevIdFor(nextCurrentNote.get().id(), catalogId));
 
-        var notes = catalogDao.selectAllNotesByCatalogId(catalogId, 0, 10);
-        assertEquals(note.id(), notes.get(0).id());
+        var nextPrevNote = noteDao.selectByNoteId(nextReplacingNoteId);
+        assertEquals(currentNoteId, noteDao.findPrevIdFor(nextPrevNote.get().id(), catalogId));
 
-        notes.stream().skip(1).forEach(
-                n -> assertEquals(
-                        notesUntilInsert.get(n.id()) + 1,
-                        noteDao.selectOrderNumberByNoteIdAndContext(
-                                n.id(), ViewContext.CATALOG
-                        ).get()
-                )
-        );
+        var allNotes = noteDao.selectAllNotesByOwnerIdIncludingCatalogs(1, 0, 10);
+        assertEquals(5, allNotes.size());
     }
 
-//    @Test
-//    void updateOrderNumberByNoteId_idExists_expectTrue() {
-//        //given
-//        final var request = new NoteOrderingRequest(
-//        );
-//
-//        //when
-//        var updated = noteDao.updateOrderNumberByNoteId(request);
-//
-//        //then
-//
-//    }
+    @Test
+    void updateOrderNumberByCatalogId_fromEndToStart() {
+        //given
+        final Integer prevNoteId = 3;
+        final Integer nextReplacingNoteId = 1;
+
+        final Integer prevInsteadNoteId = 1;
+        final int currentNoteId = 2;
+
+        final int catalogId = 10;
+
+        //when
+        noteDao.updateOrderNumberByNoteId(prevNoteId, currentNoteId, catalogId);
+
+        //then
+        var insteadNote = noteDao.selectByNoteId(currentNoteId);
+        assertEquals(prevNoteId, noteDao.findPrevIdFor(insteadNote.get().id(), catalogId));
+
+        var nextPrevNote = noteDao.selectByNoteId(nextReplacingNoteId);
+        assertEquals(currentNoteId, noteDao.findPrevIdFor(nextPrevNote.get().id(), catalogId));
+
+        var allNotes = noteDao.selectAllNotesByOwnerIdIncludingCatalogs(1, 0, 10);
+        assertEquals(5, allNotes.size());
+    }
+
+    @Test
+    void updateOrderNumberByCatalogId_fromStartToEnd() {
+        //given
+        final Integer prevNoteId = 2;
+
+        final int currentNoteId = 3;
+
+        final int catalogId = 10;
+
+        //when
+        noteDao.updateOrderNumberByNoteId(prevNoteId, currentNoteId, catalogId);
+
+        //then
+        var insteadNote = noteDao.selectByNoteId(currentNoteId);
+        assertEquals(prevNoteId, noteDao.findPrevIdFor(insteadNote.get().id(), catalogId));
+
+        var prevNote = noteDao.selectByNoteId(1);
+        assertNull(noteDao.findPrevIdFor(prevNote.get().id(), catalogId));
+
+        var allNotes = noteDao.selectAllNotesByOwnerIdIncludingCatalogs(1, 0, 10);
+        assertEquals(5, allNotes.size());
+    }
+
+    @Test
+    void updateOrderNumberByCatalogId_idNotExists() {
+        //given
+        final Integer prevNoteId = 13216;
+        final int currentNoteId = 132130;
+
+        //when
+        Executable executable = () -> noteDao.updateOrderNumberByNoteId(prevNoteId, currentNoteId, 10);
+
+        //then
+        assertThrows(EmptyResultDataAccessException.class, executable);
+    }
 
 
     @Test
@@ -195,111 +248,145 @@ class NoteDaoTest extends IntegrationTestBase {
     }
 
     @Test
-    void removeByNoteId_idExists_expectTrue() {
+    void removeByCatalogId_firstOwnerCatalogId_expectTrue() {
         //given
+        final int catalogId = 10;
         final int noteId = 1;
 
         //when
-        var updated = noteDao.removeByNoteId(noteId);
+        boolean removed = noteDao.removeByNoteId(noteId, catalogId);
 
         //then
-        assertTrue(updated);
+        assertTrue(removed);
     }
 
     @Test
-    void removeByNoteId_idNotExists_expectFalse() {
+    void removeByCatalogId_middleNoteId_checkRewritingLinks() {
         //given
-        final int noteId = 11;
+        final int catalogId = 10;
+
+        final int prevNoteId = 3;
+        final int noteId = 1;
+        final int nextNoteId = 2;
 
         //when
-        var updated = noteDao.removeByNoteId(noteId);
+        boolean removed = noteDao.removeByNoteId(noteId, catalogId);
 
         //then
-        assertFalse(updated);
+        int actualPrevId = noteDao.findPrevIdFor(nextNoteId, catalogId);
+        assertTrue(removed);
+        assertEquals(prevNoteId, actualPrevId);
     }
 
     @Test
-    void updateCatalogId_catalogExists_expectTrue() {
+    void removeByCatalogId_startingNoteId_checkRewritingLinks() {
         //given
-        final int newCatalogId = 1;
+        final int catalogId = 10;
+
+        final Integer prevNoteId = null;
         final int noteId = 3;
+        final int nextNoteId = 1;
 
         //when
-        var updated = noteDao.moveNoteIdToNewCatalogId(newCatalogId, noteId);
+        boolean removed = noteDao.removeByNoteId(noteId, catalogId);
 
         //then
-        assertTrue(updated);
-        var note = noteDao.selectByNoteId(noteId);
-        assertTrue(note.isPresent());
-        assertEquals(newCatalogId, note.get().catalogId());
-        var catalog = catalogDao.selectAllNotesByCatalogId(newCatalogId, 0, 10);
-        assertEquals(1, catalog.size());
+        Integer actualPrevId = noteDao.findPrevIdFor(nextNoteId, catalogId);
+        assertTrue(removed);
+        assertEquals(prevNoteId, actualPrevId);
     }
 
+    @Test
+    void removeByCatalogId_idNotExists_expectFalse() {
+        //given
+        final int catalogId = 12133210;
+        final int noteId = 23321;
+
+        //when
+        Executable executable = () -> noteDao.removeByNoteId(noteId, catalogId);
+
+        //then
+        assertThrows(EmptyResultDataAccessException.class, executable);
+    }
     @Test
     void updateCatalogId_catalogNotExists_expectFalse() {
         //given
-        final int newCatalogId = 32;
+        final int prevId = 1;
         final int noteId = 3;
+        final int oldCatalogId = 101231;
+        final int newCatalogId = 14;
 
         //when
-        Executable executable = () -> noteDao.moveNoteIdToNewCatalogId(newCatalogId, noteId);
+        Executable executable = () -> noteDao.moveNoteIdToNewCatalogId(noteId, oldCatalogId, newCatalogId);
 
         //then
-        assertThrows(DataIntegrityViolationException.class, executable);
+        assertThrows(EmptyResultDataAccessException.class, executable);
     }
 
     @Test
     void updateCatalogId_noteNotExists_expectFalse() {
         //given
-        final int newCatalogId = 1;
-        final int noteId = 32;
+        final int prevId = 1;
+        final int noteId = 32313;
+        final int oldCatalogId = 10;
+        final int newCatalogId = 14;
 
         //when
-        var updated = noteDao.moveNoteIdToNewCatalogId(newCatalogId, noteId);
+        Executable executable = () -> noteDao.moveNoteIdToNewCatalogId(noteId, oldCatalogId, newCatalogId);
 
         //then
-        assertFalse(updated);
+        assertThrows(EmptyResultDataAccessException.class, executable);
     }
 
     @Test
     void updateCatalogIdNull_expectTrue() {
         //given
+        final int prevId = 1;
         final int noteId = 3;
+        final int oldCatalogId = 10;
+        final int newCatalogId = 14;
 
         //when
-        var updated = noteDao.moveNoteIdToNewCatalogId(null, noteId);
+        noteDao.moveNoteIdToNewCatalogId(noteId, oldCatalogId, newCatalogId);
 
         //then
-        assertTrue(updated);
-        var note = noteDao.selectByNoteId(noteId);
-        assertTrue(note.isPresent());
-        assertNull(note.get().catalogId());
+
+        var newCatalogNotes = catalogDao.selectAllNotesByCatalogId(newCatalogId, 0, 10);
+        assertEquals(1, newCatalogNotes.size());
+
+        assertNull(noteDao.findPrevIdFor(prevId, oldCatalogId));
     }
 
     @Test
     void selectAllNotesByOwnerIdIncludingCatalogs_expectCorrectResponseSize() {
         //given
-        final int expectedNotesCountIncludingCatalogs = 3;
+        final int expectedNotesCountIncludingCatalogs = 5;
         final int userId = 1;
 
         //when
         var notes = noteDao.selectAllNotesByOwnerIdIncludingCatalogs(userId, 0 ,10);
 
         //then
+        long countNotesWithoutCatalogs = notes.stream().filter(n -> n.catalog() == null).count();
         assertEquals(expectedNotesCountIncludingCatalogs, notes.size());
+        assertEquals(2, countNotesWithoutCatalogs);
     }
 
     @Test
     void selectAllNotesByOwnerIdWithoutCatalogs_expectCorrectResponseSize() {
         //given
-        final int expectedNotesCountIncludingCatalogs = 1;
+        final int expectedNotesCountIncludingCatalogs = 3;
         final int userId = 1;
+        final var user = userDao.selectUserById(userId).get();
+        Note note = noteDao.insertNote(user, new NoteDTO()).get();
+
 
         //when
-        var notes = noteDao.selectAllNotesByOwnerIdWithoutCatalogs(userId, 0 ,10);
+        var notes = noteDao.selectAllNotesByOwnerIdWithoutCatalogs(user.getId(), 0 ,10);
 
         //then
         assertEquals(expectedNotesCountIncludingCatalogs, notes.size());
+        assertNull(notes.get(0).catalog());
+        assertEquals(6, notes.get(0).id());
     }
 }

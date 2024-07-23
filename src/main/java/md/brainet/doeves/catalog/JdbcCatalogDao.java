@@ -297,12 +297,15 @@ public class JdbcCatalogDao implements CatalogDao{
                     n.description n_description,
                     n.date_of_create n_date_of_create,
                     c.id c_id,
-                    c.title c_title
+                    c.title c_title,
+                    u.root_catalog_id u_root_catalog_id
                 FROM notes_from_catalog_in_user_order nfciuo
                 JOIN note n
                 ON n.id = nfciuo.note_id
                 JOIN catalog c 
                 ON c.id = nfciuo.catalog_id
+                JOIN users u 
+                ON u.id = c.owner_id
                 ORDER BY nfciuo.level
                 OFFSET ?
                 LIMIT ?;

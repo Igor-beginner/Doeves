@@ -28,7 +28,8 @@ public class JDBCUserDao implements UserDao {
                 u.password,
                 u.verified,
                 u.verification_details_id,
-                r.name as role_name
+                r.name as role_name,
+                u.root_catalog_id
             FROM users u
             LEFT JOIN role r
             ON u.role_id = r.id
