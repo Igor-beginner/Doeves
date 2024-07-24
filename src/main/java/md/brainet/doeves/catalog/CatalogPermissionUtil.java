@@ -13,6 +13,6 @@ public class CatalogPermissionUtil {
 
     public boolean haveEnoughRights(Integer catalogId, Integer ownerId) {
         var catalog = catalogService.findCatalog(catalogId);
-        return catalog.ownerId().equals(ownerId);
+        return catalog.ownerId().equals(ownerId) || catalogId == null;
     }
 }

@@ -90,6 +90,52 @@ public class DefaultErrorControllerAdvice {
         return new ResponseEntity<>(apiError, status);
     }
 
+    @ExceptionHandler(CatalogNotFoundException.class)
+    public ResponseEntity<ApiError> handleException(
+            HttpServletRequest request,
+            CatalogNotFoundException e,
+            @AuthenticationPrincipal User user
+    ) {
+        HttpStatus status = HttpStatus.NOT_FOUND;
+
+        ApiError apiError = new ApiError(
+                request.getRequestURI(),
+                e.getMessage(),
+                status.value(),
+                LocalDateTime.now()
+        );
+
+        LOG.warn(
+                "Cannot find catalog: {} by user[email={}]",
+                e.getCatalogId(),
+                user.getEmail()
+        );
+        return new ResponseEntity<>(apiError, status);
+    }
+
+    @ExceptionHandler(NoteNotFoundException.class)
+    public ResponseEntity<ApiError> handleException(
+            HttpServletRequest request,
+            NoteNotFoundException e,
+            @AuthenticationPrincipal User user
+    ) {
+        HttpStatus status = HttpStatus.NOT_FOUND;
+
+        ApiError apiError = new ApiError(
+                request.getRequestURI(),
+                e.getMessage(),
+                status.value(),
+                LocalDateTime.now()
+        );
+
+        LOG.warn(
+                "Cannot find note: {} by user[email={}]",
+                e.getNoteId(),
+                user.getEmail()
+        );
+        return new ResponseEntity<>(apiError, status);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> handleException(
             HttpServletRequest request,
