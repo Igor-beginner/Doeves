@@ -2,8 +2,11 @@ package md.brainet.doeves.note;
 
 import md.brainet.doeves.IntegrationTestBase;
 import md.brainet.doeves.catalog.CatalogDao;
+import md.brainet.doeves.catalog.CatalogOrderingRequest;
 import md.brainet.doeves.exception.CatalogNotFoundException;
 import md.brainet.doeves.exception.NoteNotFoundException;
+import md.brainet.doeves.user.User;
+import md.brainet.doeves.user.UserDao;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,46 +26,23 @@ class NoteServiceTest extends IntegrationTestBase {
     @Autowired
     NoteServiceImpl noteService;
 
-    @Test
-    void createNote_orderNumberPresent_expectOffsetNextItems() {
-//        //given
-//        final int ownerId = 1;
-//        final NoteDTO noteDTO = new NoteDTO(
-//                "Some note1",
-//                "Some description 2",
-//                2,
-//                3
-//        );
-//
-//        //when
-//        var note = noteService.createNote(ownerId, noteDTO);
-//
-//        //then
-//        assertEquals(ownerId, note.ownerId());
-//        var catalog = catalogDao.selectAllNotesByCatalogId(note.catalogId(), 0, 10);
-//        assertEquals(1, catalog.size());
-    }
+    @Autowired
+    UserDao userDao;
 
     @Test
-    void createNote_orderNumberIsNotPresent_expectAssigningOrderNumberZero() {
-//        //given
-//        final int ownerId = 1;
-//        final int expectedAssigningOrderNumber = 0;
-//        final NoteDTO noteDTO = new NoteDTO(
-//                "Some note1",
-//                "Some description 2",
-//                2,
-//                null
-//        );
-//
-//        //when
-//        var note = noteService.createNote(ownerId, noteDTO);
-//
-//        //then
-//        assertEquals(
-//                expectedAssigningOrderNumber,
-//                noteService.fetchOrderNumber(note.id(), ViewContext.CATALOG)
-//        );
+    void createNote_orderNumberPresent_expectOffsetNextItems() {
+        //given
+        final int ownerId = 2;
+        final var user = userDao.selectUserById(ownerId).get();
+        final NoteDTO noteDTO = new NoteDTO();
+
+
+        //when
+        var note = noteService.createNote(user, noteDTO);
+
+        //then
+        var catalog = noteDao.selectAllNotesByOwnerIdWithoutCatalogs(ownerId, 0, 10);
+        assertEquals(1, catalog.size());
     }
 
     @Test
@@ -72,7 +52,7 @@ class NoteServiceTest extends IntegrationTestBase {
         final int noteId = 1;
 
         //when
-        noteDao.updateNameByNoteId(noteId, newName);
+        noteService.changeName(noteId, newName);
 
         //then
         var note = noteDao.selectByNoteId(noteId);
@@ -83,10 +63,10 @@ class NoteServiceTest extends IntegrationTestBase {
     void changeName_idNoteNotExists_expectNoteNotFoundException() {
         //given
         final String newDescription = "some new description";
-        final int noteId = 1;
+        final int noteId = 1323;
 
         //when
-        Executable executable = () -> noteDao.updateDescriptionByNoteId(noteId, newDescription);
+        Executable executable = () -> noteService.changeName(noteId, newDescription);
 
         //then
         assertThrows(NoteNotFoundException.class, executable);
@@ -99,7 +79,7 @@ class NoteServiceTest extends IntegrationTestBase {
         final int noteId = 1;
 
         //when
-        noteDao.updateDescriptionByNoteId(noteId, newDescription);
+        noteService.changeDescription(noteId, newDescription);
 
         //then
         var note = noteDao.selectByNoteId(noteId);
@@ -110,66 +90,97 @@ class NoteServiceTest extends IntegrationTestBase {
     void changeDescription_idNoteNotExists_expectNoteNotFoundException() {
         //given
         final String newDescription = "some new description";
-        final int noteId = 1;
+        final int noteId = 32123;
 
         //when
-        Executable executable = () -> noteDao.updateDescriptionByNoteId(noteId, newDescription);
+        Executable executable = () -> noteService.changeDescription(noteId, newDescription);
 
         //then
         assertThrows(NoteNotFoundException.class, executable);
     }
 
 
-//    @Test
-//    void changeOrderNumber_noteIdExists_expectChanges() {
-//        //given
-//        final int newOrder = 2;
-//        final int noteId = 1;
-//
-//        //when
-//        noteService.changeOrderNumber(noteId, newOrder);
-//
-//        //then
-//        var note = noteDao.selectByNoteId(3);
-//        assertEquals(3, note.get().orderNumber());
-//    }
+    @Test
+    void changeOrderNumber_noteIdExists_expectChanges() {
+        //given
+        final Integer prevNoteId = null;
+        final int noteId = 2;
+        final int catalogId = 10;
 
-//    @Test
-//    void changeOrderNumber_noteIdNotExists_expectNoteNotFoundException() {
-//        //given
-//        final int newOrder = 2;
-//        final int noteId = 1321;
-//
-//        //when
-//        Executable executable = () -> noteService.changeOrderNumber(noteId, newOrder);
-//
-//        //then
-//        assertThrows(NoteNotFoundException.class, executable);
-//    }
+        //when
+        noteService.changeOrderNumber(noteId, prevNoteId, catalogId);
+
+        //then
+        var notes = catalogDao.selectAllNotesByCatalogId(catalogId, 0, 10);
+        assertEquals(noteId, notes.get(0).id());
+    }
+
+    @Test
+    void changeOrderNumber_noteIdNotExists_expectNoteNotFoundException() {
+        //given
+        final Integer prevNoteId = null;
+        final int noteId = 2321;
+        final int catalogId = 10;
+
+        //when
+        Executable executable = () -> noteService.changeOrderNumber(noteId, prevNoteId, catalogId);
+
+        //then
+        assertThrows(NoteNotFoundException.class, executable);
+    }
+
+    @Test
+    void changeOrderNumber_catalogIdNotExists_expectNoteNotFoundException() {
+        //given
+        final Integer prevNoteId = null;
+        final int noteId = 1;
+        final int catalogId = 1321230;
+
+        //when
+        Executable executable = () -> noteService.changeOrderNumber(noteId, prevNoteId, catalogId);
+
+        //then
+        assertThrows(CatalogNotFoundException.class, executable);
+    }
 
     @Test
     void removeNote_noteIdExists_expectRemoved() {
-//        //given
-//        var noteId = 1;
-//
-//        //when
-//        noteService.removeNote(noteId);
-//
-//        //then
-//        var note = noteDao.selectByNoteId(noteId);
-//        assertFalse(note.isPresent());
+        //given
+        final var noteId = 1;
+        final var catalogId = 10;
+
+        //when
+        noteService.removeNote(noteId, catalogId);
+
+        //then
+        var note = catalogDao.selectAllNotesByCatalogId(catalogId, 0 , 10);
+        assertEquals(2, note.size());
     }
 
     @Test
     void removeNote_noteIdNotExists_expectNoteNotFoundException() {
-//        //given
-//        var noteId = 1321;
-//
-//        //when
-//        Executable executable = () -> noteService.removeNote(noteId);
-//
-//        //then
-//        assertThrows(NoteNotFoundException.class, executable);
+        //given
+        final var noteId = 13123;
+        final var catalogId = 10;
+
+        //when
+        Executable executable = () -> noteService.removeNote(noteId, catalogId);
+
+        //then
+        assertThrows(NoteNotFoundException.class, executable);
+    }
+
+    @Test
+    void removeNote_catalogIdNotExists_expectCatalogNotFoundException() {
+        //given
+        final var noteId = 1;
+        final var catalogId = 100;
+
+        //when
+        Executable executable = () -> noteService.removeNote(noteId, catalogId);
+
+        //then
+        assertThrows(CatalogNotFoundException.class, executable);
     }
 
     @Test
@@ -181,7 +192,7 @@ class NoteServiceTest extends IntegrationTestBase {
         var note = noteService.fetchNote(noteId);
 
         //then
-        assertEquals("Test catalog 0", note.name());
+        assertEquals("Some Note Title", note.name());
     }
 
     @Test
@@ -198,46 +209,70 @@ class NoteServiceTest extends IntegrationTestBase {
 
     @Test
     void changeCatalog_catalogExists_expectChanges() {
-//        //given
-//        final int noteId = 1;
-//        final int catalogId = 2;
-//
-//        //when
-//        noteService.changeCatalog(noteId, catalogId);
-//
-//        //then
-//        var note = noteDao.selectByNoteId(noteId);
-//        assertEquals(catalogId, note.get().catalogId());
+        //given
+        final int noteId = 1;
+        final int catalogId = 10;
+        final int newCatalogId = 15;
+
+        final User user = userDao.selectUserById(1).get();
+        //when
+        noteService.changeCatalog(new CatalogOrderingRequest(
+                noteId,
+                catalogId,
+                newCatalogId,
+                user
+        ));
+
+        //then
+        var notesFromOldCatalog = catalogDao.selectAllNotesByCatalogId(catalogId, 0, 10);
+        var notesFromNewCatalog = catalogDao.selectAllNotesByCatalogId(newCatalogId, 0, 10);
+
+        assertEquals(2, notesFromOldCatalog.size());
+        assertEquals(1, notesFromNewCatalog.size());
     }
 
     @Test
     void changeCatalog_catalogNotExists_expectCatalogNotFound() {
-//        //given
-//        final int noteId = 1;
-//        final int catalogId = 22313;
-//
-//        //when
-//        Executable executable = () -> noteService.changeCatalog(noteId, catalogId);
-//
-//        //then
-//        assertThrows(CatalogNotFoundException.class, executable);
+        //given
+        final int noteId = 1;
+        final int catalogId = 22313;
+        final int newCatalogId = 15;
+
+        final User user = userDao.selectUserById(1).get();
+        //when
+        Executable executable = () -> noteService.changeCatalog(new CatalogOrderingRequest(
+                noteId,
+                catalogId,
+                newCatalogId,
+                user
+        ));
+
+        //then
+        assertThrows(CatalogNotFoundException.class, executable);
     }
 
     @Test
     void changeCatalog_noteNotExists_expectNoteNotFound() {
-//        //given
-//        final int noteId = 3213;
-//        final int catalogId = 2;
-//
-//        //when
-//        Executable executable = () -> noteService.changeCatalog(noteId, catalogId);
-//
-//        //then
-//        assertThrows(NoteNotFoundException.class, executable);
+        //given
+        final int noteId = 3213;
+        final int catalogId = 2;
+        final int newCatalogId = 15;
+
+        final User user = userDao.selectUserById(1).get();
+        //when
+        Executable executable = () -> noteService.changeCatalog(new CatalogOrderingRequest(
+                noteId,
+                catalogId,
+                newCatalogId,
+                user
+        ));
+
+        //then
+        assertThrows(NoteNotFoundException.class, executable);
     }
 
     @Test
-    void fetchAllOwnerNote_includingCatalogs_expectThreeTasks() {
+    void fetchAllOwnerNote_includingCatalogs_expectThreeNotes() {
         //given
         final int userId = 1;
         var request = new LimitedListNoteRequest(
@@ -250,11 +285,11 @@ class NoteServiceTest extends IntegrationTestBase {
         var notes = noteService.fetchAllOwnerNote(userId, request);
 
         //then
-        assertEquals(3, notes.size());
+        assertEquals(5, notes.size());
     }
 
     @Test
-    void fetchAllOwnerNote_withoutCatalogs_expectOneTask() {
+    void fetchAllOwnerNote_withoutCatalogs_expectOneNotes() {
         //given
         final int userId = 1;
         var request = new LimitedListNoteRequest(
@@ -267,6 +302,6 @@ class NoteServiceTest extends IntegrationTestBase {
         var notes = noteService.fetchAllOwnerNote(userId, request);
 
         //then
-        assertEquals(1, notes.size());
+        assertEquals(2, notes.size());
     }
 }

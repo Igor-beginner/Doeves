@@ -148,7 +148,6 @@ public class JdbcNoteDao implements NoteDao {
                                             Integer newCatalogId) {
 
         extractNoteIdByRewritingLinks(noteId, currentCatalogId);
-        injectNoteIdAsNextByRewritingLinksAfter(null, noteId, newCatalogId);
         var sql = """
                 UPDATE note_catalog_ordering
                 SET catalog_id = ?
@@ -162,6 +161,8 @@ public class JdbcNoteDao implements NoteDao {
                 currentCatalogId,
                 noteId
         );
+
+        injectNoteIdAsNextByRewritingLinksAfter(null, noteId, newCatalogId);
     }
 
     @Override

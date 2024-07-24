@@ -4,6 +4,7 @@ import md.brainet.doeves.catalog.CatalogOrderingRequest;
 import md.brainet.doeves.exception.NoteNotFoundException;
 import md.brainet.doeves.exception.UserNotFoundException;
 import md.brainet.doeves.user.User;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,9 +22,6 @@ public class NoteServiceImpl implements NoteService {
 
     @Override
     public Note createNote(User user, NoteDTO noteDTO) {
-        if (noteDTO.getCatalogId() == null) {
-            noteDTO.setCatalogId(user.getRootCatalogId());
-        }
         return noteDao.insertNote(user, noteDTO)
                 .orElseThrow(() -> new UserNotFoundException(user.getId()));
     }
@@ -32,9 +30,12 @@ public class NoteServiceImpl implements NoteService {
     public void changeOrderNumber(Integer editingNoteId,
                                   Integer prevNoteId,
                                   Integer catalogId) {
-        noteDao.updateOrderNumberByNoteId(prevNoteId, editingNoteId, catalogId);
+        try {
+            noteDao.updateOrderNumberByNoteId(prevNoteId, editingNoteId, catalogId);
+        } catch (EmptyResultDataAccessException e) {
+            throw new NoteNotFoundException(editingNoteId);
+        }
     }
-
     @Override
     public void changeName(Integer noteId, String name) {
         boolean updated = noteDao.updateNameByNoteId(noteId, name);
@@ -70,15 +71,11 @@ public class NoteServiceImpl implements NoteService {
         if(request.getSourceCatalogId() == null) {
             request.setSourceCatalogId(request.getUser().getRootCatalogId());
         }
-
-//        boolean updated = noteDao.moveNoteIdToNewCatalogId(
-//                request.getNoteId(),
-//                request.getSourceCatalogId(),
-//                request.getDestinationCatalogId()
-//        );
-//        if(!updated) {
-//            throw new NoteNotFoundException(request.getNoteId());
-//        }
+        noteDao.moveNoteIdToNewCatalogId(
+                request.getNoteId(),
+                request.getSourceCatalogId(),
+                request.getDestinationCatalogId()
+        );
     }
 
     @Override
