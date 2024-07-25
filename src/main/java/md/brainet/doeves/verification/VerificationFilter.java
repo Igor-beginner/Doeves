@@ -1,5 +1,6 @@
 package md.brainet.doeves.verification;
 
+import io.jsonwebtoken.MalformedJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -73,6 +74,17 @@ public class VerificationFilter extends OncePerRequestFilter {
             }
         } catch (InvalidTokenException e){
             //todo log
+        } catch (MalformedJwtException e) {
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            response.getWriter().print("""
+                        {
+                            "message" : "%s"
+                        }
+                        """.formatted(
+                    "Token is not valid"
+            ));
+            response.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
+            return;
         }
         doFilter(request, response, filterChain);
 

@@ -28,7 +28,7 @@ import java.util.Optional;
 @Component
 public class JWTAuthenticationFilter extends OncePerRequestFilter implements TokenAuthorizationHeaderPrefix {
 
-    public static final String AUTHORIZATION_PREFIX = "pidr pizda token elda chlen ";
+    public static final String AUTHORIZATION_PREFIX = "";
 
     private final JWTUtil jwtUtil;
     private final UserDetailsService userDetailsService;

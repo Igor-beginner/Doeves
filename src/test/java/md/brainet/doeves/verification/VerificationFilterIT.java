@@ -144,7 +144,7 @@ public class VerificationFilterIT extends IntegrationTestBase {
                         )
                 //then
         ).andExpect(
-                status().isForbidden()
+                status().isUnauthorized()
         );
     }
 }
