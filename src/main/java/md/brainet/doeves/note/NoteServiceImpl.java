@@ -2,12 +2,14 @@ package md.brainet.doeves.note;
 
 import md.brainet.doeves.catalog.CatalogOrderingRequest;
 import md.brainet.doeves.exception.NoteNotFoundException;
+import md.brainet.doeves.exception.NotesNotExistException;
 import md.brainet.doeves.exception.UserNotFoundException;
 import md.brainet.doeves.user.User;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -53,10 +55,20 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
-    public void removeNote(Integer noteId, Integer catalogId) {
-        boolean removed = noteDao.removeByNoteId(noteId, catalogId);
-        if(!removed) {
-            throw new NoteNotFoundException(noteId);
+    @Transactional
+    public void removeNotes(List<Integer> notesId, Integer catalogId) {
+        List<Integer> notRemovedNotesId = new ArrayList<>();
+
+        notesId.forEach(id -> {
+                    boolean removed = noteDao.removeByNoteId(id, catalogId);
+                    if (!removed) {
+                        notRemovedNotesId.add(id);
+                    }
+                }
+        );
+
+        if(!notRemovedNotesId.isEmpty()) {
+            throw new NotesNotExistException(notRemovedNotesId);
         }
     }
 

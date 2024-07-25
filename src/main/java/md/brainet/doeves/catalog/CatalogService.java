@@ -9,7 +9,7 @@ public interface CatalogService {
     Catalog findCatalog(Integer catalogId);
     List<Catalog> fetchAllOwnerCatalogs(Integer ownerId, Integer offset, Integer limit);
     void rewriteLinkAsPrevCatalogIdFor(Integer editingCatalogId, Integer backCatalogId);
-    void removeCatalog(Integer id);
+    void removeCatalogs(List<Integer> catalogsId);
     void changeName(Integer catalogId, String newName);
     List<NotePreview> fetchAllCatalogNotes(Integer catalogId, Integer offset, Integer limit);
 }

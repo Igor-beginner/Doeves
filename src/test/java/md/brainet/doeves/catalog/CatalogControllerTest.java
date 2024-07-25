@@ -198,6 +198,70 @@ class CatalogControllerTest extends IntegrationTestBase {
     }
 
     @Test
+    void deleteCatalogs_catalogExists() throws Exception {
+        final int[] deletingCatalogsId = {10, 13, 15};
+
+        mockMvc.perform(
+                delete(
+                        "/api/v1/catalog/%s,%s,%s"
+                                .formatted(
+                                        deletingCatalogsId[0],
+                                        deletingCatalogsId[1],
+                                        deletingCatalogsId[2]
+                                )
+                )
+        ).andExpectAll(
+                status().isOk()
+        );
+
+        var userCatalogs =  catalogDao.selectAllCatalogsByOwnerId(1, 0, 10);
+        assertEquals(4, userCatalogs.size());
+    }
+
+    @Test
+    void deleteCatalogs_catalogNotExist() throws Exception {
+        final int[] deletingCatalogsId = {10, 1432, 15, 12312};
+
+        mockMvc.perform(
+                delete(
+                        "/api/v1/catalog/%s,%s,%s,%s"
+                                .formatted(
+                                        deletingCatalogsId[0],
+                                        deletingCatalogsId[1],
+                                        deletingCatalogsId[2],
+                                        deletingCatalogsId[3]
+                                )
+                )
+        ).andExpectAll(
+                status().isNotFound()
+        );
+
+        var userCatalogs =  catalogDao.selectAllCatalogsByOwnerId(1, 0, 10);
+        assertEquals(7, userCatalogs.size());
+    }
+
+    @Test
+    void deleteCatalogs_catalogNotOwned() throws Exception {
+        final int[] deletingCatalogsId = {10, 3, 15};
+
+        mockMvc.perform(
+                delete(
+                        "/api/v1/catalog/%s,%s,%s"
+                                .formatted(
+                                        deletingCatalogsId[0],
+                                        deletingCatalogsId[1],
+                                        deletingCatalogsId[2]
+                                )
+                )
+        ).andExpectAll(
+                status().isForbidden()
+        );
+
+        var userCatalogs =  catalogDao.selectAllCatalogsByOwnerId(1, 0, 10);
+        assertEquals(7, userCatalogs.size());
+    }
+
+    @Test
     void deleteCatalog_catalogExists() throws Exception {
         final int deletingCatalogId = 10;
 

@@ -3,14 +3,16 @@ package md.brainet.doeves.note;
 import md.brainet.doeves.IntegrationTestBase;
 import md.brainet.doeves.catalog.CatalogDao;
 import md.brainet.doeves.catalog.CatalogOrderingRequest;
-import md.brainet.doeves.exception.CatalogNotFoundException;
 import md.brainet.doeves.exception.NoteNotFoundException;
+import md.brainet.doeves.exception.NotesNotExistException;
 import md.brainet.doeves.user.User;
 import md.brainet.doeves.user.UserDao;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -150,7 +152,7 @@ class NoteServiceTest extends IntegrationTestBase {
         final var catalogId = 10;
 
         //when
-        noteService.removeNote(noteId, catalogId);
+        noteService.removeNotes(List.of(noteId), catalogId);
 
         //then
         var note = catalogDao.selectAllNotesByCatalogId(catalogId, 0 , 10);
@@ -164,10 +166,38 @@ class NoteServiceTest extends IntegrationTestBase {
         final var catalogId = 10;
 
         //when
-        Executable executable = () -> noteService.removeNote(noteId, catalogId);
+        Executable executable = () -> noteService.removeNotes(List.of(noteId), catalogId);
 
         //then
-        assertThrows(NoteNotFoundException.class, executable);
+        assertThrows(NotesNotExistException.class, executable);
+    }
+
+    @Test
+    void removeNote_severalNotes_expectNoteNotFoundException() {
+        //given
+        final var noteId = List.of(3, 2);
+        final var catalogId = 10;
+
+        //when
+        noteService.removeNotes(noteId, catalogId);
+
+        //then
+        noteId.forEach(id ->
+            assertFalse(noteDao.selectByNoteId(id).isPresent())
+        );
+    }
+
+    @Test
+    void removeNote_oneOfNotesDontExist_expectNoteNotFoundException() {
+        //given
+        final var noteId = List.of(3, 2, 123);
+        final var catalogId = 10;
+
+        //when
+        Executable executable = () -> noteService.removeNotes(noteId, catalogId);
+
+        //then
+        assertThrows(NotesNotExistException.class, executable);
     }
 
     @Test

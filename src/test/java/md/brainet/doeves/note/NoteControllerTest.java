@@ -514,4 +514,74 @@ class NoteControllerTest extends IntegrationTestBase {
                 status().isNotFound()
         );
     }
+
+    @Test
+    void deleteNote_severalNotes() throws Exception {
+        final int[] notesId = {1, 2, 3};
+        final int catalogId = 10;
+
+        mockMvc.perform(
+                delete(
+                        "/api/v1/note/%s,%s,%s/catalog?id=%s"
+                                .formatted(
+                                        notesId[0],
+                                        notesId[2],
+                                        notesId[1],
+                                        catalogId
+                                )
+                )
+        ).andExpectAll(
+                status().isOk()
+        );
+
+        var catalogAfter = catalogDao.selectAllNotesByCatalogId(catalogId, 0, 10);
+        assertTrue(catalogAfter.isEmpty());
+    }
+
+    @Test
+    void deleteNote_oneOfNotesNotExists() throws Exception {
+        final int[] notesId = {1, 232, 3};
+        final int catalogId = 10;
+
+        mockMvc.perform(
+                delete(
+                        "/api/v1/note/%s,%s,%s/catalog?id=%s"
+                                .formatted(
+                                        notesId[0],
+                                        notesId[2],
+                                        notesId[1],
+                                        catalogId
+                                )
+                )
+        ).andExpectAll(
+                status().isNotFound()
+        );
+
+        var catalogAfter = catalogDao.selectAllNotesByCatalogId(catalogId, 0, 10);
+        assertEquals(3, catalogAfter.size());
+    }
+
+    @Test
+    void deleteNote_oneOfNotesNotOwned() throws Exception {
+        final var user = userDao.selectUserById(2).get();
+        final int[] notesId = {1, noteDao.insertNote(user, new NoteDTO()).get().id(), 3};
+        final int catalogId = 10;
+
+        mockMvc.perform(
+                delete(
+                        "/api/v1/note/%s,%s,%s/catalog?id=%s"
+                                .formatted(
+                                        notesId[0],
+                                        notesId[2],
+                                        notesId[1],
+                                        catalogId
+                                )
+                )
+        ).andExpectAll(
+                status().isForbidden()
+        );
+
+        var catalogAfter = catalogDao.selectAllNotesByCatalogId(catalogId, 0, 10);
+        assertEquals(3, catalogAfter.size());
+    }
 }

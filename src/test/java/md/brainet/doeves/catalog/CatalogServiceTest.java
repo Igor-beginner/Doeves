@@ -2,11 +2,14 @@ package md.brainet.doeves.catalog;
 
 import md.brainet.doeves.IntegrationTestBase;
 import md.brainet.doeves.exception.CatalogNotFoundException;
+import md.brainet.doeves.exception.CatalogsNotExistException;
 import md.brainet.doeves.exception.UserNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -128,7 +131,7 @@ class CatalogServiceTest extends IntegrationTestBase {
         final int catalogId = 10;
 
         //when
-        catalogService.removeCatalog(catalogId);
+        catalogService.removeCatalogs(List.of(catalogId));
 
         //then
         var catalog = catalogDao.selectCatalogById(catalogId);
@@ -141,10 +144,47 @@ class CatalogServiceTest extends IntegrationTestBase {
         final int catalogId = 231;
 
         //when
-        Executable executable = () -> catalogService.removeCatalog(catalogId);
+        Executable executable = () -> catalogService.removeCatalogs(List.of(catalogId));
 
         //then
-        assertThrows(CatalogNotFoundException.class, executable);
+        assertThrows(CatalogsNotExistException.class, executable);
+    }
+
+    @Test
+    void removeCatalog_severalCatalogs_expectDeleted() {
+        //given
+        final List<Integer> catalogsId = List.of(10, 11, 15);
+
+        catalogsId.forEach(id ->
+                assertTrue(catalogDao.selectCatalogById(id).isPresent())
+        );
+
+        //when
+        catalogService.removeCatalogs(catalogsId);
+
+        //then
+        catalogsId.forEach(id ->
+                assertFalse(catalogDao.selectCatalogById(id).isPresent())
+        );
+    }
+
+    @Test
+    void removeCatalog_severalCatalogsOneOfThemIsNotExists_expectDeleted() {
+        //given
+        final List<Integer> catalogsId = List.of(10, 141, 15);
+        var existingCatalogs = List.of(10, 15);
+        existingCatalogs.forEach(id ->
+                assertTrue(catalogDao.selectCatalogById(id).isPresent())
+        );
+
+        //when
+        Executable executable = () -> catalogService.removeCatalogs(catalogsId);
+
+        //then
+        assertThrows(CatalogsNotExistException.class, executable);
+        existingCatalogs.forEach(id ->
+                assertTrue(catalogDao.selectCatalogById(id).isPresent())
+        );
     }
 
     @Test
