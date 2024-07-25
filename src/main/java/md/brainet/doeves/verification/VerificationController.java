@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Size;
 import md.brainet.doeves.user.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -27,12 +28,15 @@ public class VerificationController {
     public ResponseEntity<?> tryToVerify(
             @RequestParam String code,
             @AuthenticationPrincipal User user) {
-        verificationService.verify(user.getEmail(), code);
+        String token = verificationService.verify(user.getEmail(), code);
+        //todo invalidate current token
         LOG.info("Verified successfully [email={}]", user.getEmail());
-        return new ResponseEntity<>(
-                new VerificationResponse("Account was verified successfully!"),
-                HttpStatus.ACCEPTED
-        );
+        return ResponseEntity.accepted()
+                .header(HttpHeaders.AUTHORIZATION, token)
+                .body(new VerificationResponse(
+                        "Account was verified successfully!",
+                        token
+                ));
     }
 
     @PostMapping("new")
@@ -42,7 +46,10 @@ public class VerificationController {
         // TODO make code sending in other service
         LOG.info("Send new verification code for [email={}]", user.getEmail());
         return new ResponseEntity<>(
-                new VerificationResponse("New code was sent to your email."),
+                new VerificationResponse(
+                        "New code was sent to your email.",
+                         null
+                ),
                 HttpStatus.OK
         );
     }

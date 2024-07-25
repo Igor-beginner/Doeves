@@ -1,6 +1,7 @@
 package md.brainet.doeves.verification;
 
 import md.brainet.doeves.exception.*;
+import md.brainet.doeves.jwt.JWTUtil;
 import md.brainet.doeves.mail.MailService;
 import md.brainet.doeves.mail.MessageRequest;
 import md.brainet.doeves.user.User;
@@ -12,6 +13,7 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class VerificationServiceImpl implements VerificationService {
@@ -24,16 +26,19 @@ public class VerificationServiceImpl implements VerificationService {
     private final UserService userService;
     private final MailService mailService;
     private final CodeGenerator codeGenerator;
+    private final JWTUtil jwtUtil;
 
     public VerificationServiceImpl(
             VerificationDetailsDao verificationDao,
             UserService userService,
             MailService mailService,
-            CodeGenerator codeGenerator) {
+            CodeGenerator codeGenerator,
+            JWTUtil jwtUtil) {
         this.verificationDao = verificationDao;
         this.userService = userService;
         this.mailService = mailService;
         this.codeGenerator = codeGenerator;
+        this.jwtUtil = jwtUtil;
     }
 
     @Override
@@ -41,7 +46,7 @@ public class VerificationServiceImpl implements VerificationService {
             isolation = Isolation.REPEATABLE_READ,
             noRollbackFor = VerificationBadCodeException.class
     )
-    public void verify(String email, String code) {
+    public String verify(String email, String code) {
 
         if(verificationDao.isUserVerified(email)) {
             throw new VerificationException(
@@ -62,6 +67,17 @@ public class VerificationServiceImpl implements VerificationService {
         }
 
         verificationDao.verifyUserByEmail(email);
+
+        return issueVerifiedTokenForUserEmail(email);
+    }
+
+    private String issueVerifiedTokenForUserEmail(String email) {
+        User user = userService.findUser(email);
+        return jwtUtil.issueTokenWithRoles(
+                user.getEmail(),
+                List.of(user.getRole()),
+                user.isVerified()
+        );
     }
 
     @Override

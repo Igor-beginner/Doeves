@@ -1,6 +1,7 @@
 package md.brainet.doeves.verification;
 
 public record VerificationResponse(
-        String message
+        String message,
+        String token
 ) {
 }
