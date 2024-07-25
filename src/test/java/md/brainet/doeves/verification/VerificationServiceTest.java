@@ -4,7 +4,9 @@ import md.brainet.doeves.exception.VerificationBadCodeException;
 import md.brainet.doeves.exception.VerificationCodeExpiredException;
 import md.brainet.doeves.exception.VerificationCodeIsEmptyException;
 import md.brainet.doeves.exception.VerificationException;
+import md.brainet.doeves.jwt.JWTUtil;
 import md.brainet.doeves.mail.MailService;
+import md.brainet.doeves.user.Role;
 import md.brainet.doeves.user.User;
 import md.brainet.doeves.user.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -34,6 +37,8 @@ class VerificationServiceTest {
     MailService mailService;
     @Mock
     CodeGenerator codeGenerator;
+    @Mock
+    JWTUtil jwtUtil;
 
     @InjectMocks
     VerificationServiceImpl verificationService;
@@ -123,10 +128,25 @@ class VerificationServiceTest {
         var details = VerificationDetailsFactory
                 .build(new SixDigitsCodeGenerator());
 
+        var user = new User();
+        user.setEmail(email);
+        user.setRole(Role.USER);
+        user.setVerified(true);
+
+        String jwtToken = "23123sdfgasdfsdagfsadgsdafdsafasdfasdfasdf";
+
         doReturn(false)
                 .when(verificationDao).isUserVerified(email);
         doReturn(Optional.of(details))
                 .when(verificationDao).decrementVerificationDetailsAttemptByEmail(email);
+        doReturn(user)
+                .when(userService).findUser(email);
+        doReturn(jwtToken)
+                .when(jwtUtil).issueTokenWithRoles(
+                        user.getEmail(),
+                        List.of(user.getRole()),
+                        user.isVerified()
+                );
 
         verificationService.verify(email, details.getCode());
 
