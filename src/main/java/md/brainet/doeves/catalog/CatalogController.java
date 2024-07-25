@@ -131,13 +131,13 @@ public class CatalogController {
 
 
     @DeleteMapping("{id}")
-    @PreAuthorize("@catalogPermissionUtil.haveEnoughRights(#catalogId, #user.id)")
+    @PreAuthorize("@catalogPermissionUtil.haveEnoughRights(#catalogsId, #user.id)")
     public ResponseEntity<?> deleteCatalog(
             @AuthenticationPrincipal User user,
-            @PathVariable("id") Integer catalogId
+            @PathVariable("id") List<Integer> catalogsId
     ) {
-        catalogService.removeCatalog(catalogId);
-        LOG.info("User [email={}] deleted catalog [id={}]", user.getEmail(), catalogId);
+        catalogService.removeCatalogs(catalogsId);
+        LOG.info("User [email={}] deleted catalog [id={}]", user.getEmail(), catalogsId);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 }

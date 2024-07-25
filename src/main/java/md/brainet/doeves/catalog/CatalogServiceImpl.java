@@ -1,11 +1,14 @@
 package md.brainet.doeves.catalog;
 
 import md.brainet.doeves.exception.CatalogNotFoundException;
+import md.brainet.doeves.exception.CatalogsNotExistException;
 import md.brainet.doeves.exception.UserNotFoundException;
 import md.brainet.doeves.note.NotePreview;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -51,10 +54,20 @@ public class CatalogServiceImpl implements CatalogService {
     }
 
     @Override
-    public void removeCatalog(Integer catalogId) {
-        boolean updated = catalogDao.removeByCatalogId(catalogId);
-        if(!updated) {
-            throw new CatalogNotFoundException(catalogId);
+    @Transactional
+    public void removeCatalogs(List<Integer> catalogsId) {
+        List<Integer> notRemovedCatalogsId = new ArrayList<>();
+
+        catalogsId.forEach(id -> {
+            boolean updated = catalogDao.removeByCatalogId(id);
+            if(!updated) {
+                notRemovedCatalogsId.add(id);
+            }
+        });
+
+
+        if(!notRemovedCatalogsId.isEmpty()) {
+            throw new CatalogsNotExistException(catalogsId);
         }
     }
 
