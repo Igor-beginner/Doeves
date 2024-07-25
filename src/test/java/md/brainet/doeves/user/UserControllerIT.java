@@ -72,7 +72,7 @@ class UserControllerIT extends IntegrationTestBase {
                 jsonPath("$.path")
                         .value("/api/v1/user"),
 
-                jsonPath("$.content")
+                jsonPath("$.message")
                         .value("Email [test@mail.ru] already exists."),
 
                 jsonPath("$.status_code")
@@ -104,7 +104,7 @@ class UserControllerIT extends IntegrationTestBase {
                 jsonPath("$.path")
                         .value("/api/v1/user"),
 
-                jsonPath("$.content")
+                jsonPath("$.message")
                         .value("Email [testmail.ru] isn't valid."),
 
                 jsonPath("$.status_code")
@@ -138,7 +138,7 @@ class UserControllerIT extends IntegrationTestBase {
                 jsonPath("$.path")
                         .value("/api/v1/user"),
 
-                jsonPath("$.content")
+                jsonPath("$.message")
                         .value("Password is not valid!"),
 
                 jsonPath("$.status_code")

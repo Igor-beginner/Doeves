@@ -9,7 +9,7 @@ public record ApiError(
         @JsonProperty("path")
         String path,
 
-        @JsonProperty("content")
+        @JsonProperty("message")
         String message,
 
         @JsonProperty("status_code")
