@@ -139,16 +139,16 @@ public class NoteController {
     }
 
 
-    @PreAuthorize("@notePermissionUtil.haveEnoughRights(#noteId, #user.id) " +
+    @PreAuthorize("@notePermissionUtil.haveEnoughRights(#notesId, #user.id) " +
             "&& @catalogPermissionUtil.haveEnoughRights(#catalogId, #user.id)")
     @DeleteMapping("{id}/catalog")
     public ResponseEntity<?> deleteNote(
             @AuthenticationPrincipal User user,
-            @PathVariable("id") Integer noteId,
+            @PathVariable("id") List<Integer> notesId,
             @RequestParam("id") Integer catalogId
     ) {
-        noteService.removeNote(noteId, catalogId);
-        LOG.info("User [email={}] deleted note [id={}]", user.getEmail(), noteId);
+        noteService.removeNotes(notesId, catalogId);
+        LOG.info("User [email={}] deleted notes [id's={}]", user.getEmail(), notesId);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 }

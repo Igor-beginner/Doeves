@@ -8,7 +8,7 @@ public class CatalogsNotExistException extends RuntimeException {
 
 
     public CatalogsNotExistException(List<Integer> catalogsId) {
-        super("Request was reject cause the next catalog id's are not exists: "
+        super("Request was rejected cause the next catalog id's do not exist: "
                 .concat(catalogsId.toString()));
         this.catalogsId = catalogsId;
     }

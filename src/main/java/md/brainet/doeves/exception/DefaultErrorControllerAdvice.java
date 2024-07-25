@@ -136,6 +136,29 @@ public class DefaultErrorControllerAdvice {
         return new ResponseEntity<>(apiError, status);
     }
 
+    @ExceptionHandler(NotesNotExistException.class)
+    public ResponseEntity<ApiError> handleException(
+            HttpServletRequest request,
+            NotesNotExistException e,
+            @AuthenticationPrincipal User user
+    ) {
+        HttpStatus status = HttpStatus.NOT_FOUND;
+
+        ApiError apiError = new ApiError(
+                request.getRequestURI(),
+                e.getMessage(),
+                status.value(),
+                LocalDateTime.now()
+        );
+
+        LOG.warn(
+                "Cannot find notes: {} by user[email={}]",
+                e.getNoteIds().toString(),
+                user.getEmail()
+        );
+        return new ResponseEntity<>(apiError, status);
+    }
+
     @ExceptionHandler(NoteNotFoundException.class)
     public ResponseEntity<ApiError> handleException(
             HttpServletRequest request,
