@@ -1,5 +1,6 @@
 package md.brainet.doeves.note;
 
+import md.brainet.doeves.exception.NoteNotFoundException;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -12,7 +13,8 @@ public class NotePermissionUtil {
     }
 
     public boolean haveEnoughRights(Integer noteId, Integer userId) {
-        Integer ownerId = noteDao.selectOwnerIdByNoteId(noteId);
+        Integer ownerId = noteDao.selectOwnerIdByNoteId(noteId)
+                .orElseThrow(() -> new NoteNotFoundException(noteId));
         return userId.equals(ownerId);
     }
 }

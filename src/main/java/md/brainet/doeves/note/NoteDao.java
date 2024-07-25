@@ -16,5 +16,5 @@ public interface NoteDao {
     List<NotePreview> selectAllNotesByOwnerIdIncludingCatalogs(Integer ownerId, Integer offset, Integer limit);
     List<NotePreview> selectAllNotesByOwnerIdWithoutCatalogs(Integer ownerId, Integer offset, Integer limit);
 
-    Integer selectOwnerIdByNoteId(Integer noteId);
+    Optional<Integer> selectOwnerIdByNoteId(Integer noteId);
 }

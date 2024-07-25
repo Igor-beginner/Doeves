@@ -18,9 +18,12 @@ public class NoteController {
 
     private final static Logger LOG = LoggerFactory.getLogger(NoteController.class);
     private final NoteService noteService;
+    private final NotePermissionUtil notePermissionUtil;
 
-    public NoteController(NoteService noteService) {
+    public NoteController(NoteService noteService,
+                          NotePermissionUtil notePermissionUtil) {
         this.noteService = noteService;
+        this.notePermissionUtil = notePermissionUtil;
     }
 
     @GetMapping("{id}")
@@ -66,11 +69,11 @@ public class NoteController {
     }
 
     @PatchMapping("{id}/name")
-    @PreAuthorize("@notePermissionUtil.haveEnoughRights(#noteId, #user.id)")
+    @PreAuthorize("@notePermissionUtil.haveEnoughRights(#noteId, #user.getId())")
     public ResponseEntity<?> changeName(
             @AuthenticationPrincipal User user,
             @PathVariable("id") Integer noteId,
-            @RequestParam("v") String newName
+            @RequestParam("val") String newName
     ) {
 
         noteService.changeName(noteId, newName);
@@ -83,7 +86,7 @@ public class NoteController {
     public ResponseEntity<?> changeDescription(
             @AuthenticationPrincipal User user,
             @PathVariable("id") Integer noteId,
-            @RequestParam("v") String newDescription
+            @RequestParam("val") String newDescription
     ) {
 
         noteService.changeDescription(noteId, newDescription);

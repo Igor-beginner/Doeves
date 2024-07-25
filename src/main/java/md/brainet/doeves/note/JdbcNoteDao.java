@@ -1,5 +1,6 @@
 package md.brainet.doeves.note;
 
+import md.brainet.doeves.exception.NoteNotFoundException;
 import md.brainet.doeves.user.User;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -117,13 +118,19 @@ public class JdbcNoteDao implements NoteDao {
                 WHERE note_id = ?
                 AND catalog_id = ?;
                 """;
+        Integer prevId;
+        try {
+            prevId = jdbcTemplate.queryForObject(
+                    sql,
+                    Integer.class,
+                    noteId,
+                    catalogId
+            );
+        } catch (EmptyResultDataAccessException e) {
+            prevId = null;
+        }
 
-        return jdbcTemplate.queryForObject(
-                sql,
-                Integer.class,
-                noteId,
-                catalogId
-        );
+        return prevId;
     }
 
     @Override
@@ -147,7 +154,6 @@ public class JdbcNoteDao implements NoteDao {
                                             Integer currentCatalogId,
                                             Integer newCatalogId) {
 
-        extractNoteIdByRewritingLinks(noteId, currentCatalogId);
         var sql = """
                 UPDATE note_catalog_ordering
                 SET catalog_id = ?
@@ -155,12 +161,18 @@ public class JdbcNoteDao implements NoteDao {
                 AND note_id = ?
                 """;
 
-        jdbcTemplate.update(
+        int updated = jdbcTemplate.update(
                 sql,
                 newCatalogId,
                 currentCatalogId,
                 noteId
         );
+
+        if(updated <= 0) {
+            throw new NoteNotFoundException(noteId);
+        }
+
+        extractNoteIdByRewritingLinks(noteId, currentCatalogId);
 
         injectNoteIdAsNextByRewritingLinksAfter(null, noteId, newCatalogId);
     }
@@ -273,7 +285,7 @@ public class JdbcNoteDao implements NoteDao {
     }
 
     @Override
-    public Integer selectOwnerIdByNoteId(Integer noteId) {
+    public Optional<Integer> selectOwnerIdByNoteId(Integer noteId) {
         var sql = """
                 SELECT DISTINCT c.owner_id
                 FROM catalog c
@@ -282,11 +294,17 @@ public class JdbcNoteDao implements NoteDao {
                 AND nco.note_id = ?;
                 """;
 
-        return jdbcTemplate.queryForObject(
-                sql,
-                Integer.class,
-                noteId
-        );
+
+        try {
+            noteId = jdbcTemplate.queryForObject(
+                    sql,
+                    Integer.class,
+                    noteId
+            );
+        } catch (EmptyResultDataAccessException e) {
+            noteId = null;
+        }
+        return Optional.ofNullable(noteId);
     }
 
     private String getCatalogSelectingRecursiveSql() {
