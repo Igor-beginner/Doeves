@@ -6,6 +6,7 @@ import md.brainet.doeves.exception.NotesNotExistException;
 import md.brainet.doeves.exception.UserNotFoundException;
 import md.brainet.doeves.user.User;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +34,12 @@ public class NoteServiceImpl implements NoteService {
                                   Integer prevNoteId,
                                   Integer catalogId) {
         try {
+            if(catalogId == null) {
+                catalogId = ((User)SecurityContextHolder.getContext()
+                        .getAuthentication()
+                        .getPrincipal())
+                        .getRootCatalogId();
+            }
             noteDao.updateOrderNumberByNoteId(prevNoteId, editingNoteId, catalogId);
         } catch (EmptyResultDataAccessException e) {
             throw new NoteNotFoundException(editingNoteId);

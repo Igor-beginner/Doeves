@@ -61,7 +61,7 @@ public class NoteController {
     @PostMapping
     public ResponseEntity<?> postNote(
             @AuthenticationPrincipal User user,
-            NoteDTO noteDTO
+            @RequestBody NoteDTO noteDTO
     ) {
         Note note = noteService.createNote(user, noteDTO);
         LOG.info("User [email={}] created note [id={}]", user.getEmail(), note.id());
@@ -118,15 +118,15 @@ public class NoteController {
         return new ResponseEntity<>(HttpStatus.ACCEPTED);
     }
 
-    @PatchMapping("{editingNoteId}/order-after/{prevNoteId}/catalog")
+    @PatchMapping("{editingNoteId}/order-after")
     @PreAuthorize("@catalogPermissionUtil.haveEnoughRights(#catalogId, #user.id)" +
             "&& @notePermissionUtil.haveEnoughRights(#editingNoteId, #user.id)" +
             "&& @notePermissionUtil.haveEnoughRights(#prevNoteId, #user.id)")
     public ResponseEntity<?> changeNoteOrder(
             @AuthenticationPrincipal User user,
-            @RequestParam("id") Integer catalogId,
+            @RequestParam(value = "catalog-id", required = false) Integer catalogId,
             @PathVariable("editingNoteId") Integer editingNoteId,
-            @PathVariable("prevNoteId")Integer prevNoteId
+            @RequestParam(value = "prev-note-id", required = false) Integer prevNoteId
     ) {
 
         noteService.changeOrderNumber(editingNoteId, prevNoteId, catalogId);
@@ -141,11 +141,11 @@ public class NoteController {
 
     @PreAuthorize("@notePermissionUtil.haveEnoughRights(#notesId, #user.id) " +
             "&& @catalogPermissionUtil.haveEnoughRights(#catalogId, #user.id)")
-    @DeleteMapping("{id}/catalog")
+    @DeleteMapping("{id}")
     public ResponseEntity<?> deleteNote(
             @AuthenticationPrincipal User user,
             @PathVariable("id") List<Integer> notesId,
-            @RequestParam("id") Integer catalogId
+            @RequestParam("catalog-id") Integer catalogId
     ) {
         noteService.removeNotes(notesId, catalogId);
         LOG.info("User [email={}] deleted notes [id's={}]", user.getEmail(), notesId);

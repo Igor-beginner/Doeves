@@ -340,7 +340,7 @@ class NoteControllerTest extends IntegrationTestBase {
 
         mockMvc.perform(
                 patch(
-                        "/api/v1/note/%s/order-after/%s/catalog?id=%s"
+                        "/api/v1/note/%s/order-after?prev-note-id=%s&catalog-id=%s"
                                 .formatted(currentNoteId, noteAfterId, catalogId)
                 )
         ).andExpectAll(
@@ -360,7 +360,7 @@ class NoteControllerTest extends IntegrationTestBase {
 
         mockMvc.perform(
                 patch(
-                        "/api/v1/note/%s/order-after/%s/catalog?id=%s"
+                        "/api/v1/note/%s/order-after?prev-note-id=%s&catalog-id=%s"
                                 .formatted(currentNoteId, noteAfterId, catalogId)
                 )
         ).andExpectAll(
@@ -376,7 +376,7 @@ class NoteControllerTest extends IntegrationTestBase {
 
         mockMvc.perform(
                 patch(
-                        "/api/v1/note/%s/order-after/%s/catalog?id=%s"
+                        "/api/v1/note/%s/order-after?prev-note-id=%s&catalog-id=%s"
                                 .formatted(currentNoteId, noteAfterId, catalogId)
                 )
         ).andExpectAll(
@@ -392,7 +392,7 @@ class NoteControllerTest extends IntegrationTestBase {
 
         mockMvc.perform(
                 patch(
-                        "/api/v1/note/%s/order-after/%s/catalog?id=%s"
+                        "/api/v1/note/%s/order-after?prev-note-id=%s&catalog-id=%s"
                                 .formatted(currentNoteId, noteAfterId, catalogId)
                 )
         ).andExpectAll(
@@ -408,7 +408,7 @@ class NoteControllerTest extends IntegrationTestBase {
 
         mockMvc.perform(
                 patch(
-                        "/api/v1/note/%s/order-after/%s/catalog?id=%s"
+                        "/api/v1/note/%s/order-after?prev-note-id=%s&catalog-id=%s"
                                 .formatted(currentNoteId, noteAfterId, catalogId)
                 )
         ).andExpectAll(
@@ -425,7 +425,7 @@ class NoteControllerTest extends IntegrationTestBase {
 
         mockMvc.perform(
                 patch(
-                        "/api/v1/note/%s/order-after/%s/catalog?id=%s"
+                        "/api/v1/note/%s/order-after?prev-note-id=%s&catalog-id=%s"
                                 .formatted(currentNoteId, noteAfterId, catalogId)
                 )
         ).andExpectAll(
@@ -442,13 +442,30 @@ class NoteControllerTest extends IntegrationTestBase {
 
         mockMvc.perform(
                 patch(
-                        "/api/v1/note/%s/order-after/%s/catalog?id=%s"
+                        "/api/v1/note/%s/order-after?prev-note-id=%s&catalog-id=%s"
                                 .formatted(currentNoteId, noteAfterId, catalogId)
                 )
         ).andExpectAll(
                 status().isForbidden()
         );
     }
+//    @Test
+//    void changeNoteOrder_currentNoteAfterIdNotOwned() throws Exception {
+//        var user = userDao.selectUserById(2).get();
+//        final int currentNoteId = 2;
+//        final int noteAfterId = noteDao.insertNote(user, new NoteDTO()).get().id();
+//        final int catalogId = 10;
+//
+//        mockMvc.perform(
+//                patch(
+//                        "/api/v1/note/%s/order-after?prev-note-id=%s&catalog-id=%s"
+//                                .formatted(currentNoteId, noteAfterId, catalogId)
+//                )
+//        ).andExpectAll(
+//                status().isForbidden()
+//        );
+//    }
+
 
     @Test
     void deleteNote_noteExists() throws Exception {

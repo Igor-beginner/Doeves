@@ -8,6 +8,7 @@ public class NoteDTO {
 
         private String name;
         private String description;
+        @JsonProperty("catalog_id")
         private Integer catalogId;
 
         public String getName() {

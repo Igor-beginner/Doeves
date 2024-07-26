@@ -15,11 +15,17 @@ public class CatalogPermissionUtil {
     }
 
     public boolean haveEnoughRights(Integer catalogId, Integer ownerId) {
+        if(catalogId == null) {
+            return true;
+        }
         var catalog = catalogService.findCatalog(catalogId);
-        return catalog.ownerId().equals(ownerId) || catalogId == null;
+        return catalog.ownerId().equals(ownerId);
     }
 
     public boolean haveEnoughRights(List<Integer> catalogsId, Integer ownerId) {
+        if(catalogsId == null) {
+            return true;
+        }
         return catalogsId.stream()
                 .allMatch(id ->
                         haveEnoughRights(id, ownerId)

@@ -15,12 +15,18 @@ public class NotePermissionUtil {
     }
 
     public boolean haveEnoughRights(Integer noteId, Integer userId) {
+        if(noteId == null) {
+            return true;
+        }
         Integer ownerId = noteDao.selectOwnerIdByNoteId(noteId)
                 .orElseThrow(() -> new NoteNotFoundException(noteId));
         return userId.equals(ownerId);
     }
 
     public boolean haveEnoughRights(List<Integer> notesId, Integer userId) {
+        if(notesId == null) {
+            return true;
+        }
         return notesId.stream()
                 .allMatch(id -> haveEnoughRights(id, userId));
     }
