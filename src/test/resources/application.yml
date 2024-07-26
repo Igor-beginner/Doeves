@@ -2,6 +2,10 @@ spring:
   datasource:
     username: test
     password: test
+  data:
+    redis:
+      host: localhost
+      port: 6379
 
 logging:
   level:
