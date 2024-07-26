@@ -9,6 +9,7 @@ import md.brainet.doeves.exception.InvalidTokenException;
 import md.brainet.doeves.exception.UserAlreadyVerifiedException;
 import md.brainet.doeves.exception.VerificationException;
 import md.brainet.doeves.jwt.JWTUtil;
+import md.brainet.doeves.jwt.JwtBlackListCache;
 import md.brainet.doeves.jwt.TokenAuthorizationHeaderPrefix;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -24,6 +25,7 @@ import java.util.List;
 public class VerificationFilter extends OncePerRequestFilter {
 
     private final JWTUtil jwtUtil;
+    private final JwtBlackListCache jwtBlackListCache;
     private final TokenAuthorizationHeaderPrefix tokenAuthorizationHeaderPrefix;
 
 
@@ -31,8 +33,10 @@ public class VerificationFilter extends OncePerRequestFilter {
     private List<String> verificationURIs;
 
     public VerificationFilter(JWTUtil jwtUtil,
+                              JwtBlackListCache jwtBlackListCache,
                               TokenAuthorizationHeaderPrefix tokenAuthorizationHeaderPrefix) {
         this.jwtUtil = jwtUtil;
+        this.jwtBlackListCache = jwtBlackListCache;
         this.tokenAuthorizationHeaderPrefix = tokenAuthorizationHeaderPrefix;
     }
 
@@ -49,6 +53,12 @@ public class VerificationFilter extends OncePerRequestFilter {
             boolean contains = verificationURIs.contains(requestURI);
             String token = tokenAuthorizationHeaderPrefix.cleanFor(rawToken);
             boolean verified = jwtUtil.isTokenVerified(token);
+
+            boolean tokenBlocked = jwtBlackListCache.exists(token);
+
+            if(tokenBlocked) {
+
+            }
 
             if (!contains && !verified) {
                 response.setStatus(HttpStatus.UNAUTHORIZED.value());

@@ -5,7 +5,6 @@ import org.springframework.stereotype.Repository;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 @Repository
@@ -17,13 +16,22 @@ public class RedisJwtCache implements JwtBlackListCache, JwtUserCache {
     private static final String JWT_USER_PREFIX = "jwtUser:";
 
     private final RedisTemplate<String, String> redisTemplate;
+    private final JWTUtil jwtUtil;
 
-    public RedisJwtCache(RedisTemplate<String, String> redisTemplate) {
+    public RedisJwtCache(RedisTemplate<String, String> redisTemplate,
+                         JWTUtil jwtUtil) {
         this.redisTemplate = redisTemplate;
+        this.jwtUtil = jwtUtil;
     }
 
     @Override
-    public void putJwtUntil(String jwt, LocalDateTime expireDate) {
+    public void putJwtUntilDateExpired(String jwt, LocalDateTime expireDate) {
+        putExpire(JWT_BLACK_LIST_PREFIX + jwt, JWT_BLACK_LIST_STUB, expireDate);
+    }
+
+    @Override
+    public void putJwtUntilDateExpired(String jwt) {
+        var expireDate = jwtUtil.getExpireDate(jwt);
         putExpire(JWT_BLACK_LIST_PREFIX + jwt, JWT_BLACK_LIST_STUB, expireDate);
     }
 

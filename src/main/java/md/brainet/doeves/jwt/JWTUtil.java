@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.security.Key;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -20,9 +21,10 @@ import static java.time.temporal.ChronoUnit.DAYS;
 @Service
 public class JWTUtil {
 
-    private final String secretKey;
     private static final String IS_VERIFIED_FIELD_NAME = "isVerified";
+    private static final String EXPIRED_DATE_FIELD_NAME = "exp";
 
+    private final String secretKey;
 
     public JWTUtil(@Value("${jwt.secret.key}") String secretKey) {
         this.secretKey = secretKey;
@@ -101,6 +103,10 @@ public class JWTUtil {
 
     public boolean isTokenVerified(String jwt) {
         return getClaims(jwt).get(IS_VERIFIED_FIELD_NAME, Boolean.class);
+    }
+
+    public LocalDateTime getExpireDate(String jwt) {
+        return getClaims(jwt).get(EXPIRED_DATE_FIELD_NAME, LocalDateTime.class);
     }
 
     private boolean isTokenExpired(String jwt) {

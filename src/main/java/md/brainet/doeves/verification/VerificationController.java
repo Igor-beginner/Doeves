@@ -1,8 +1,7 @@
 package md.brainet.doeves.verification;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.Size;
+import jakarta.servlet.http.HttpServletRequest;
+import md.brainet.doeves.jwt.JwtBlackListCache;
 import md.brainet.doeves.user.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,23 +18,29 @@ public class VerificationController {
     private static final Logger LOG = LoggerFactory.getLogger(VerificationController.class);
 
     private final VerificationService  verificationService;
+    private final JwtBlackListCache jwtBlackListCache;
 
-    public VerificationController(VerificationService verificationService) {
+    public VerificationController(VerificationService verificationService,
+                                  JwtBlackListCache jwtBlackListCache) {
         this.verificationService = verificationService;
+        this.jwtBlackListCache = jwtBlackListCache;
     }
 
     @PostMapping
     public ResponseEntity<?> tryToVerify(
+            HttpServletRequest request,
             @RequestParam String code,
             @AuthenticationPrincipal User user) {
-        String token = verificationService.verify(user.getEmail(), code);
-        //todo invalidate current token
+        String verifiedJwtToken = verificationService.verify(user.getEmail(), code);
+        String currentJwtToken = request.getHeader(HttpHeaders.AUTHORIZATION);
+        jwtBlackListCache.putJwtUntilDateExpired(currentJwtToken);
+
         LOG.info("Verified successfully [email={}]", user.getEmail());
         return ResponseEntity.accepted()
-                .header(HttpHeaders.AUTHORIZATION, token)
+                .header(HttpHeaders.AUTHORIZATION, verifiedJwtToken)
                 .body(new VerificationResponse(
                         "Account was verified successfully!",
-                        token
+                        verifiedJwtToken
                 ));
     }
 

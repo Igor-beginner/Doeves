@@ -67,7 +67,6 @@ public class VerificationServiceImpl implements VerificationService {
         }
 
         verificationDao.verifyUserByEmail(email);
-
         return issueVerifiedTokenForUserEmail(email);
     }
 
