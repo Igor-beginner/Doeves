@@ -1,5 +1,11 @@
 package md.brainet.doeves.note;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import md.brainet.doeves.catalog.CatalogOrderingRequest;
 import md.brainet.doeves.user.User;
 import org.slf4j.Logger;
@@ -26,6 +32,7 @@ public class NoteController {
         this.notePermissionUtil = notePermissionUtil;
     }
 
+    @Operation(summary = "Fetch concrete note")
     @GetMapping("{id}")
     @PreAuthorize("@notePermissionUtil.haveEnoughRights(#noteId, #user.id)")
     public ResponseEntity<?> fetchConcreteNote(
@@ -37,6 +44,77 @@ public class NoteController {
         return new ResponseEntity<>(note, HttpStatus.OK);
     }
 
+    @Operation(
+            summary = "Fetch all user notes",
+            description = "You can fetch all notes using this method by boolean 'including-catalogs' query param.")
+    @ApiResponses({
+            @ApiResponse(
+                    description = "Response with 'including-catalogs=true' can be seems like:",
+                    content = @Content(mediaType = "application/json",
+                    schema = @Schema(type = "note-preview",
+                    example = """
+                            [
+                                {
+                                   "id" : 1,
+                                   "name" : "Some note title",
+                                   "description" : "Description here",
+                                   "catalog" : {
+                                       "id" : 3,
+                                       "name" : "Some catalog name"
+                                   },
+                                   "date_of_create" : "2024-07-27T14:47:39.4152046"
+                                },
+                                {
+                                   "id" : 2,
+                                   "name" : null,
+                                   "description" : "Description here 2",
+                                   "catalog" : {
+                                       "id" : 5,
+                                       "name" : null
+                                   },
+                                   "date_of_create" : "2024-07-27T14:47:39.4152046"
+                                },
+                                {
+                                   "id" : 2,
+                                   "name" : null,
+                                   "description" : "Description here 2",
+                                   "catalog" : null
+                                   "date_of_create" : "2024-07-27T14:47:39.4152046"
+                                }
+                            ]
+                            """))
+            ),
+            @ApiResponse(
+                    description = "Response with 'including-catalogs=false' can be seems like:",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(type = "note-preview",
+                                    example = """
+                            [
+                                {
+                                   "id" : 2,
+                                   "name" : null,
+                                   "description" : "Description here 2",
+                                   "catalog" : null
+                                   "date_of_create" : "2024-07-27T14:47:39.4152046"
+                                },
+                                {
+                                   "id" : 3,
+                                   "name" : null,
+                                   "description" : "Description here 212",
+                                   "catalog" : null
+                                   "date_of_create" : "2024-07-27T14:47:39.4152046"
+                                },
+                                {
+                                   "id" : 10,
+                                   "name" : null,
+                                   "description" : "Description here 232",
+                                   "catalog" : null
+                                   "date_of_create" : "2024-07-27T14:47:39.4152046"
+                                },
+                            ]
+                            """))
+            )
+    })
     @GetMapping("all")
     public ResponseEntity<?> fetchAllOwnerNote(
             @AuthenticationPrincipal User user,
@@ -94,6 +172,10 @@ public class NoteController {
         return new ResponseEntity<>(HttpStatus.ACCEPTED);
     }
 
+
+    @Operation(
+            summary = "Change note catalog",
+            description = "You can change note catalog using this method. Where {id} is editing note, {from} is current catalog id and {to} wishing catalog id")
     @PatchMapping("{id}/from/{from}/to/{to}")
     @PreAuthorize("@notePermissionUtil.haveEnoughRights(#noteId, #user.id) " +
             "&& @catalogPermissionUtil.haveEnoughRights(#fromCatalogId, #user.id)" +
@@ -118,6 +200,7 @@ public class NoteController {
         return new ResponseEntity<>(HttpStatus.ACCEPTED);
     }
 
+    @Operation(summary = "Change note order number")
     @PatchMapping("{editingNoteId}/order-after")
     @PreAuthorize("@catalogPermissionUtil.haveEnoughRights(#catalogId, #user.id)" +
             "&& @notePermissionUtil.haveEnoughRights(#editingNoteId, #user.id)" +

@@ -11,6 +11,6 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 public class DoevesApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(DoevesApplication.class, args);
+         SpringApplication.run(DoevesApplication.class, args);
     }
 }
