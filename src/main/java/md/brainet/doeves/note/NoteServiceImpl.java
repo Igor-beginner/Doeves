@@ -66,8 +66,10 @@ public class NoteServiceImpl implements NoteService {
     public void removeNotes(List<Integer> notesId, Integer catalogId) {
         List<Integer> notRemovedNotesId = new ArrayList<>();
 
+        Integer nullableCatalogId = catalogId == null ? getRootCatalogIdOfAuthenticatedUser() : catalogId;
+
         notesId.forEach(id -> {
-                    boolean removed = noteDao.removeByNoteId(id, catalogId);
+                    boolean removed = noteDao.removeByNoteId(id, nullableCatalogId);
                     if (!removed) {
                         notRemovedNotesId.add(id);
                     }
@@ -77,6 +79,10 @@ public class NoteServiceImpl implements NoteService {
         if(!notRemovedNotesId.isEmpty()) {
             throw new NotesNotExistException(notRemovedNotesId);
         }
+    }
+
+    private Integer getRootCatalogIdOfAuthenticatedUser() {
+        return ((User)SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getRootCatalogId();
     }
 
     @Override

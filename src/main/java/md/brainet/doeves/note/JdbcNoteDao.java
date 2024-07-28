@@ -154,11 +154,15 @@ public class JdbcNoteDao implements NoteDao {
                                             Integer currentCatalogId,
                                             Integer newCatalogId) {
 
+        extractNoteIdByRewritingLinks(noteId, currentCatalogId);
+
+        injectNoteIdAsNextByRewritingLinksAfter(null, noteId, newCatalogId);
+
         var sql = """
                 UPDATE note_catalog_ordering
                 SET catalog_id = ?
                 WHERE catalog_id = ?
-                AND note_id = ?
+                AND note_id = ?;
                 """;
 
         int updated = jdbcTemplate.update(
@@ -171,10 +175,6 @@ public class JdbcNoteDao implements NoteDao {
         if(updated <= 0) {
             throw new NoteNotFoundException(noteId);
         }
-
-        extractNoteIdByRewritingLinks(noteId, currentCatalogId);
-
-        injectNoteIdAsNextByRewritingLinksAfter(null, noteId, newCatalogId);
     }
 
     @Override

@@ -228,7 +228,7 @@ public class NoteController {
     public ResponseEntity<?> deleteNote(
             @AuthenticationPrincipal User user,
             @PathVariable("id") List<Integer> notesId,
-            @RequestParam("catalog-id") Integer catalogId
+            @RequestParam(value = "catalog-id", required = false) Integer catalogId
     ) {
         noteService.removeNotes(notesId, catalogId);
         LOG.info("User [email={}] deleted notes [id's={}]", user.getEmail(), notesId);
