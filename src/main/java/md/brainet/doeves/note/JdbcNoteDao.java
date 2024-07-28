@@ -408,6 +408,28 @@ public class JdbcNoteDao implements NoteDao {
         return nextId;
     }
 
+    public Integer selectFirstNoteIdFromCatalog(Integer catalogId) {
+        var sql = """
+                SELECT note_id
+                FROM note_catalog_ordering
+                WHERE catalog_id = ?
+                AND prev_note_id IS NULL
+                """;
+
+        Integer firstNoteId;
+
+        try {
+            firstNoteId = jdbcTemplate.queryForObject(
+                    sql,
+                    Integer.class,
+                    catalogId
+            );
+        } catch (EmptyResultDataAccessException e) {
+            firstNoteId = null;
+        }
+        return firstNoteId;
+    }
+
     private Integer findNextIdFor(Integer noteId, Integer catalogId) {
         var findingNextNoteIdSql = """
                 SELECT note_id
@@ -444,27 +466,5 @@ public class JdbcNoteDao implements NoteDao {
                 noteId,
                 catalogId
         );
-    }
-
-    public Integer selectFirstNoteIdFromCatalog(Integer catalogId) {
-        var sql = """
-                SELECT note_id
-                FROM note_catalog_ordering
-                WHERE catalog_id = ?
-                AND prev_note_id IS NULL
-                """;
-
-        Integer firstNoteId;
-
-        try {
-            firstNoteId = jdbcTemplate.queryForObject(
-                    sql,
-                    Integer.class,
-                    catalogId
-            );
-        } catch (EmptyResultDataAccessException e) {
-            firstNoteId = null;
-        }
-        return firstNoteId;
     }
 }
