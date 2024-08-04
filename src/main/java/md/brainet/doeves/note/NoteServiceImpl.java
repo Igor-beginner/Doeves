@@ -151,4 +151,21 @@ public class NoteServiceImpl extends EntityWithinContextLinkedListService<NoteDT
         }
         return notes;
     }
+
+    public void duplicate(Integer noteId, Integer destinationCatalogId) {
+        var note = noteDao.selectByNoteId(noteId)
+                .orElseThrow(() -> new NoteNotFoundException(noteId));
+
+
+        Integer entityId = noteDao.insertEntity(convert(note));
+
+        super.linkEntityToContext(entityId, destinationCatalogId, noteDao::insertIntoNoteCatalogOrdering);
+    }
+
+    private NoteDTO convert(Note note) {
+        var noteDTO = new NoteDTO();
+        noteDTO.setName(note.name());
+        noteDTO.setDescription(note.description());
+        return noteDTO;
+    }
 }

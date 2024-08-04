@@ -1,10 +1,6 @@
 package md.brainet.doeves.note;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import md.brainet.doeves.catalog.CatalogOrderingRequest;
 import md.brainet.doeves.user.User;
 import org.slf4j.Logger;
@@ -108,14 +104,14 @@ public class NoteController {
     @Operation(
             summary = "Change note catalog",
             description = "You can change note catalog using this method. Where {id} is editing note, {from} is current catalog id and {to} wishing catalog id")
-    @PatchMapping("{id}/from/{from}/to/{to}")
+    @PatchMapping("{id}/moving-to/{to}")
     @PreAuthorize("@notePermissionUtil.haveEnoughRights(#noteId, #user.id) " +
             "&& @catalogPermissionUtil.haveEnoughRights(#fromCatalogId, #user.id)" +
             "&& @catalogPermissionUtil.haveEnoughRights(#toCatalogId, #user.id)")
     public ResponseEntity<?> changeCatalog(
             @AuthenticationPrincipal User user,
             @PathVariable("id") Integer noteId,
-            @PathVariable("from") Integer fromCatalogId,
+            @RequestParam("from") Integer fromCatalogId,
             @PathVariable("to") Integer toCatalogId
     ) {
         noteService.changeCatalog(new CatalogOrderingRequest(
@@ -130,6 +126,25 @@ public class NoteController {
                 fromCatalogId,
                 toCatalogId);
         return new ResponseEntity<>(HttpStatus.ACCEPTED);
+    }
+
+    @Operation(
+            summary = "Copy note to",
+            description = "You can change note catalog using this method. Where {id} is editing note, {from} is current catalog id and {to} wishing catalog id")
+    @PostMapping("{noteId}/copy-to")
+    @PreAuthorize("@notePermissionUtil.haveEnoughRights(#noteId, #user.id) " +
+            "&& @catalogPermissionUtil.haveEnoughRights(#toCatalogId, #user.id)")
+    public ResponseEntity<?> duplicateNote(
+            @AuthenticationPrincipal User user,
+            @PathVariable("noteId") Integer noteId,
+            @RequestParam("catalog-id") Integer toCatalogId
+    ) {
+        noteService.duplicate(noteId, toCatalogId);
+        LOG.info("User [email={}] has duplicated [noteId={}] to [catalogId={}]'",
+                user.getEmail(),
+                noteId,
+                toCatalogId);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @Operation(summary = "Change note order number")
