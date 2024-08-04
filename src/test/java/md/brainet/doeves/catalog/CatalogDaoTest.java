@@ -45,7 +45,8 @@ class CatalogDaoTest extends IntegrationTestBase {
         //given
         final int expectedId = 17;
 
-        var catalog = new CatalogDTO("My First Catalog");
+        var catalog = new CatalogDTO();
+        catalog.setName("My First Catalog");
         var firstCatalogId = catalogDao.selectFirstCatalogIdByOwnerId(1);
         var firstCatalog = catalogDao.selectCatalogById(firstCatalogId).get();
 

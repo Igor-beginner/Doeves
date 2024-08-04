@@ -3,7 +3,10 @@ package md.brainet.doeves.catalog;
 import md.brainet.doeves.exception.CatalogNotFoundException;
 import md.brainet.doeves.exception.CatalogsNotExistException;
 import md.brainet.doeves.exception.UserNotFoundException;
+import md.brainet.doeves.general.EntityWithinContextLinkedListService;
 import md.brainet.doeves.note.NotePreview;
+import md.brainet.doeves.note.NoteServiceImpl;
+import md.brainet.doeves.user.User;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,12 +15,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-public class CatalogServiceImpl implements CatalogService {
+public class CatalogServiceImpl extends EntityWithinContextLinkedListService<CatalogDTO> implements CatalogService {
 
     private final CatalogDao catalogDao;
+    private final NoteServiceImpl noteService;
 
-    public CatalogServiceImpl(CatalogDao catalogDao) {
+    public CatalogServiceImpl(CatalogDao catalogDao, NoteServiceImpl noteService) {
+        super(catalogDao);
         this.catalogDao = catalogDao;
+        this.noteService = noteService;
     }
 
     @Override
@@ -88,4 +94,6 @@ public class CatalogServiceImpl implements CatalogService {
             throw new CatalogNotFoundException(catalogId);
         }
     }
+
+
 }

@@ -91,8 +91,7 @@ class CatalogControllerTest extends IntegrationTestBase {
                         .content(json)
         ).andExpectAll(
                 status().isCreated(),
-                jsonPath("$.id").exists(),
-                jsonPath("$.name").value(title)
+                jsonPath("$.id").exists()
         );
     }
 

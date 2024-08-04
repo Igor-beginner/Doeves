@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import java.lang.reflect.Field;
 import java.time.LocalDateTime;
+import java.util.NoSuchElementException;
 
 @ControllerAdvice
 public class DefaultErrorControllerAdvice {
@@ -44,6 +45,25 @@ public class DefaultErrorControllerAdvice {
                 request.getRemoteAddr(),
                 e.getMessage()
         );
+        return new ResponseEntity<>(apiError, status);
+    }
+
+    @ExceptionHandler(NoSuchElementException.class)
+    public ResponseEntity<ApiError> handleException(
+            HttpServletRequest request,
+            NoSuchElementException e
+    ) {
+        HttpStatus status = HttpStatus.NOT_FOUND;
+
+        ApiError apiError = new ApiError(
+                request.getRequestURI(),
+                e.getMessage(),
+                status.value(),
+                LocalDateTime.now()
+        );
+
+        LOG.warn(e.getMessage());
+
         return new ResponseEntity<>(apiError, status);
     }
 

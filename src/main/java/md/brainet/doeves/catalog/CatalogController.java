@@ -12,17 +12,18 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/catalog")
 public class CatalogController {
 
     private static final Logger LOG = LoggerFactory.getLogger(CatalogController.class);
-    private final CatalogService catalogService;
+    private final CatalogServiceImpl catalogService;
     private final NoteService noteService;
     private final CatalogPermissionUtil catalogPermissionUtil;
 
-    public CatalogController(CatalogService catalogService,
+    public CatalogController(CatalogServiceImpl catalogService,
                              NoteService noteService,
                              CatalogPermissionUtil catalogPermissionUtil) {
         this.catalogService = catalogService;
@@ -84,9 +85,10 @@ public class CatalogController {
             @RequestBody CatalogDTO catalogDTO,
             @AuthenticationPrincipal User user) {
 
-        Catalog catalog = catalogService.createCatalog(user.getId(), catalogDTO);
-        LOG.info("Catalog [id={}] was created by [email={}]", user.getId(), user.getEmail());
-        return new ResponseEntity<>(catalog, HttpStatus.CREATED);
+        catalogDTO.setOwnerId(user.getId());
+        Integer catalogId = catalogService.insertEntityIntoContextOnTop(catalogDTO, user.getId());
+        LOG.info("Catalog [id={}] was created by [email={}]", catalogId, user.getEmail());
+        return new ResponseEntity<>(Map.of("id", catalogId), HttpStatus.CREATED);
     }
 
     @PatchMapping("{editingCatalogId}/order-after/{backCatalogId}")
@@ -98,7 +100,7 @@ public class CatalogController {
             @PathVariable(value = "backCatalogId") Integer backCatalogId
             ) {
 
-        catalogService.rewriteLinkAsPrevCatalogIdFor(editingCatalogId, backCatalogId);
+        catalogService.moveEntityBehind(backCatalogId, editingCatalogId, user.getId());
         LOG.info("User [email={}] has set prev_id as {} for catalog_id {}",
                 user.getEmail(),
                 backCatalogId,
@@ -136,7 +138,7 @@ public class CatalogController {
             @AuthenticationPrincipal User user,
             @PathVariable("id") List<Integer> catalogsId
     ) {
-        catalogService.removeCatalogs(catalogsId);
+        catalogService.deleteEntityAnywhere(catalogsId);
         LOG.info("User [email={}] deleted catalog [id={}]", user.getEmail(), catalogsId);
         return new ResponseEntity<>(HttpStatus.OK);
     }
