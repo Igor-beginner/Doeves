@@ -476,7 +476,7 @@ class NoteControllerTest extends IntegrationTestBase {
 
         mockMvc.perform(
                 delete(
-                        "/api/v1/note/%s/catalog?id=%s"
+                        "/api/v1/note/%s?catalog-id=%s"
                                 .formatted(noteId, catalogId)
                 )
         ).andExpectAll(
@@ -494,7 +494,7 @@ class NoteControllerTest extends IntegrationTestBase {
 
         mockMvc.perform(
                 delete(
-                        "/api/v1/note/%s/catalog?id=%s"
+                        "/api/v1/note/%s?catalog-id=%s"
                                 .formatted(noteId, catalogId)
                 )
         ).andExpectAll(
@@ -509,7 +509,7 @@ class NoteControllerTest extends IntegrationTestBase {
 
         mockMvc.perform(
                 delete(
-                        "/api/v1/note/%s/catalog?id=%s"
+                        "/api/v1/note/%s?catalog-id=%s"
                                 .formatted(noteId, catalogId)
                 )
         ).andExpectAll(
@@ -524,7 +524,7 @@ class NoteControllerTest extends IntegrationTestBase {
 
         mockMvc.perform(
                 delete(
-                        "/api/v1/note/%s/catalog?id=%s"
+                        "/api/v1/note/%s?catalog-id=%s"
                                 .formatted(noteId, catalogId)
                 )
         ).andExpectAll(
@@ -539,7 +539,7 @@ class NoteControllerTest extends IntegrationTestBase {
 
         mockMvc.perform(
                 delete(
-                        "/api/v1/note/%s,%s,%s/catalog?id=%s"
+                        "/api/v1/note/%s,%s,%s?catalog-id=%s"
                                 .formatted(
                                         notesId[0],
                                         notesId[2],
@@ -562,7 +562,7 @@ class NoteControllerTest extends IntegrationTestBase {
 
         mockMvc.perform(
                 delete(
-                        "/api/v1/note/%s,%s,%s/catalog?id=%s"
+                        "/api/v1/note/%s,%s,%s?catalog-id=%s"
                                 .formatted(
                                         notesId[0],
                                         notesId[2],
@@ -586,7 +586,7 @@ class NoteControllerTest extends IntegrationTestBase {
 
         mockMvc.perform(
                 delete(
-                        "/api/v1/note/%s,%s,%s/catalog?id=%s"
+                        "/api/v1/note/%s,%s,%s?catalog-id=%s"
                                 .formatted(
                                         notesId[0],
                                         notesId[2],

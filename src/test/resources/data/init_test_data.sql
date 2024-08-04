@@ -2,6 +2,8 @@ DELETE FROM task;
 DELETE FROM users;
 DELETE FROM verification_details;
 DELETE FROM catalog;
+DELETE FROM note_catalog_ordering;
+DELETE FROM note;
 
 SELECT SETVAL('catalog_id_seq', 1);
 

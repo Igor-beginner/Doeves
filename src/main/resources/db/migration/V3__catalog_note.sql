@@ -26,21 +26,6 @@ ALTER TABLE users
 ADD COLUMN root_catalog_id INTEGER REFERENCES catalog(id) ON DELETE SET NULL;
 
 
-CREATE OR REPLACE FUNCTION delete_note() RETURNS TRIGGER
-LANGUAGE plpgsql
-AS $$
-    BEGIN
-        DELETE FROM note
-        WHERE id = OLD.note_id;
-        RETURN OLD;
-    END;
-    $$;
-
-CREATE TRIGGER delete_note_after_deleting_note_catalog_ordering
-    AFTER DELETE ON note_catalog_ordering
-    FOR EACH ROW
-    EXECUTE FUNCTION delete_note();
-
 CREATE OR REPLACE FUNCTION check_root_catalog_id_equals_with_catalog_owner_id() RETURNS TRIGGER
     LANGUAGE plpgsql
 AS $$

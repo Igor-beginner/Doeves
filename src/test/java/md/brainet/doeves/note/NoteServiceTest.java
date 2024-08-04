@@ -11,8 +11,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.util.List;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -38,13 +40,30 @@ class NoteServiceTest extends IntegrationTestBase {
         final var user = userDao.selectUserById(ownerId).get();
         final NoteDTO noteDTO = new NoteDTO();
 
-
         //when
-        var note = noteService.createNote(user, noteDTO);
+        noteService.insertEntityIntoContextOnTop(noteDTO, user);
 
         //then
         var catalog = noteDao.selectAllNotesByOwnerIdWithoutCatalogs(ownerId, 0, 10);
         assertEquals(1, catalog.size());
+    }
+
+    @Test
+    void createSeveralNotes_orderNumberPresent_expectAllItems() {
+        //given
+        final int ownerId = 2;
+        final var user = userDao.selectUserById(ownerId).get();
+        final NoteDTO noteDTO = new NoteDTO();
+        final int amount = 10;
+
+        //when
+        IntStream.iterate(0, i -> ++i)
+                        .limit(amount)
+                                .forEach(i -> noteService.insertEntityIntoContextOnTop(noteDTO, user.getRootCatalogId()));
+
+        //then
+        var catalog = noteDao.selectAllNotesByOwnerIdWithoutCatalogs(ownerId, 0, 10);
+        assertEquals(amount, catalog.size());
     }
 
     @Test
@@ -110,7 +129,7 @@ class NoteServiceTest extends IntegrationTestBase {
         final int catalogId = 10;
 
         //when
-        noteService.changeOrderNumber(noteId, prevNoteId, catalogId);
+        noteService.moveEntityBehind(prevNoteId, noteId, catalogId);
 
         //then
         var notes = catalogDao.selectAllNotesByCatalogId(catalogId, 0, 10);
@@ -176,10 +195,9 @@ class NoteServiceTest extends IntegrationTestBase {
     void removeNote_severalNotes_expectNoteNotFoundException() {
         //given
         final var noteId = List.of(3, 2);
-        final var catalogId = 10;
 
         //when
-        noteService.removeNotes(noteId, catalogId);
+        noteService.deleteEntityAnywhere(noteId);
 
         //then
         noteId.forEach(id ->
@@ -252,6 +270,7 @@ class NoteServiceTest extends IntegrationTestBase {
                 newCatalogId,
                 user
         ));
+
 
         //then
         var notesFromOldCatalog = catalogDao.selectAllNotesByCatalogId(catalogId, 0, 10);

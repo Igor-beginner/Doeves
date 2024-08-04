@@ -3,11 +3,15 @@ package md.brainet.doeves.catalog;
 
 import md.brainet.doeves.note.NotePreview;
 import md.brainet.doeves.note.NotePreviewListResultSetMapper;
+import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
@@ -44,7 +48,7 @@ public class JdbcCatalogDao implements CatalogDao{
                 jdbcTemplate.query(
                         sql,
                         catalogMapper,
-                        catalogDTO.name(),
+                        catalogDTO.getName(),
                         null,
                         ownerId
                 );
@@ -283,6 +287,16 @@ public class JdbcCatalogDao implements CatalogDao{
         return prevId;
     }
 
+    @Override
+    public List<Integer> selectAllNotesIdByCatalogId(Integer catalogId) {
+        var sql = """
+                SELECT note_id
+                FROM note_catalog_ordering
+                WHERE catalog_id = ?;
+                """;
+
+        return jdbcTemplate.queryForList(sql, Integer.class, catalogId);
+    }
 
     @Override
     public List<NotePreview> selectAllNotesByCatalogId(Integer catalogId, Integer offset, Integer limit) {
@@ -326,5 +340,152 @@ public class JdbcCatalogDao implements CatalogDao{
                 offset,
                 limit
         );
+    }
+
+
+    @Override
+    public Integer insertEntity(CatalogDTO entity) {
+        var sql = """
+                INSERT INTO catalog(title, prev_catalog_id, owner_id)
+                VALUES(?, ?, ?)
+                RETURNING id;
+                """;
+
+        return jdbcTemplate.queryForObject(
+                        sql,
+                        Integer.class,
+                entity.getName(),
+                        null,
+                        entity.getOwnerId()
+        );
+    }
+
+    @Override
+    public List<Integer> findAllContextsForEntity(Integer entityId) {
+        var sql = """
+                SELECT DISTINCT owner_id
+                FROM catalog
+                WHERE id = ?
+                """;
+
+        return jdbcTemplate.queryForList(sql, Integer.class, entityId);
+    }
+
+    @Override
+    public void removeEntity(Integer entityId) {
+        var sql = """
+                DELETE FROM catalog
+                WHERE id = ?
+                """;
+
+        jdbcTemplate.update(sql, entityId);
+    }
+
+    @Override
+    public boolean removeEntity(Integer entityId, Integer contextId) {
+        var sql = """
+                DELETE FROM catalog
+                WHERE id = ?
+                AND owner_id = ?
+                """;
+
+        return jdbcTemplate.update(sql, entityId, contextId) > 0;
+    }
+
+    @Override
+    public void cleanUp() {
+
+    }
+
+    @Override
+    public void updatePreviousEntityIdByContext(Integer previousEntityId, Integer currentEntityId, Integer contextId) {
+        var prevIdAsNSql = """
+                UPDATE catalog
+                SET prev_catalog_id = ?
+                WHERE id = ?
+                AND owner_id = ?;
+                """;
+
+
+        jdbcTemplate.update(prevIdAsNSql, previousEntityId, currentEntityId, contextId);
+    }
+
+    @Override
+    public Integer findFirstEntityIdByContext(Integer contextId) {
+        var sql = """
+                SELECT id
+                FROM catalog c
+                WHERE prev_catalog_id IS NULL
+                AND owner_id = ?
+                AND id != (
+                    SELECT DISTINCT root_catalog_id
+                    FROM users u
+                    WHERE u.id = c.owner_id
+                );
+                """;
+
+        Integer entityId;
+        try {
+            entityId = jdbcTemplate.queryForObject(
+                    sql,
+                    Integer.class,
+                    contextId
+            );
+        } catch (EmptyResultDataAccessException e) {
+            entityId = null;
+        }
+
+        return entityId;
+    }
+    @Override
+    public Integer findNextEntityIdByContext(Integer entityId, Integer contextId) {
+        var findingNextCatalogIdSql = """
+                SELECT id
+                FROM catalog
+                WHERE prev_catalog_id = ?
+                AND owner_id = ?;
+                """;
+
+        Integer prevId;
+
+        try {
+
+            prevId = jdbcTemplate.queryForObject(
+                    findingNextCatalogIdSql,
+                    Integer.class,
+                    entityId,
+                    contextId
+            );
+        } catch (EmptyResultDataAccessException e) {
+            prevId = null;
+        }
+
+        return prevId;
+    }
+
+    @Override
+    public Integer findPrevEntityIdByContext(Integer entityId, Integer contextId) {
+        var sql = """
+                SELECT prev_catalog_id
+                FROM catalog
+                WHERE id = ?
+                AND owner_id = ?;
+                """;
+
+        Integer prevId;
+
+        try {
+
+            prevId = jdbcTemplate.queryForObject(
+                    sql,
+                    Integer.class,
+                    entityId,
+                    contextId
+            );
+        } catch (EmptyResultDataAccessException e) {
+            prevId = null;
+        }
+
+        return prevId;
     }
 }

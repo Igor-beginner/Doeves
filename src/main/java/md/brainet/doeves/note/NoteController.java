@@ -1,7 +1,6 @@
 package md.brainet.doeves.note;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -17,16 +16,17 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/note")
 public class NoteController {
 
     private final static Logger LOG = LoggerFactory.getLogger(NoteController.class);
-    private final NoteService noteService;
+    private final NoteServiceImpl noteService;
     private final NotePermissionUtil notePermissionUtil;
 
-    public NoteController(NoteService noteService,
+    public NoteController(NoteServiceImpl noteService,
                           NotePermissionUtil notePermissionUtil) {
         this.noteService = noteService;
         this.notePermissionUtil = notePermissionUtil;
@@ -47,74 +47,6 @@ public class NoteController {
     @Operation(
             summary = "Fetch all user notes",
             description = "You can fetch all notes using this method by boolean 'including-catalogs' query param.")
-    @ApiResponses({
-            @ApiResponse(
-                    description = "Response with 'including-catalogs=true' can be seems like:",
-                    content = @Content(mediaType = "application/json",
-                    schema = @Schema(type = "note-preview",
-                    example = """
-                            [
-                                {
-                                   "id" : 1,
-                                   "name" : "Some note title",
-                                   "description" : "Description here",
-                                   "catalog" : {
-                                       "id" : 3,
-                                       "name" : "Some catalog name"
-                                   },
-                                   "date_of_create" : "2024-07-27T14:47:39.4152046"
-                                },
-                                {
-                                   "id" : 2,
-                                   "name" : null,
-                                   "description" : "Description here 2",
-                                   "catalog" : {
-                                       "id" : 5,
-                                       "name" : null
-                                   },
-                                   "date_of_create" : "2024-07-27T14:47:39.4152046"
-                                },
-                                {
-                                   "id" : 2,
-                                   "name" : null,
-                                   "description" : "Description here 2",
-                                   "catalog" : null
-                                   "date_of_create" : "2024-07-27T14:47:39.4152046"
-                                }
-                            ]
-                            """))
-            ),
-            @ApiResponse(
-                    description = "Response with 'including-catalogs=false' can be seems like:",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(type = "note-preview",
-                                    example = """
-                            [
-                                {
-                                   "id" : 2,
-                                   "name" : null,
-                                   "description" : "Description here 2",
-                                   "catalog" : null
-                                   "date_of_create" : "2024-07-27T14:47:39.4152046"
-                                },
-                                {
-                                   "id" : 3,
-                                   "name" : null,
-                                   "description" : "Description here 212",
-                                   "catalog" : null
-                                   "date_of_create" : "2024-07-27T14:47:39.4152046"
-                                },
-                                {
-                                   "id" : 10,
-                                   "name" : null,
-                                   "description" : "Description here 232",
-                                   "catalog" : null
-                                   "date_of_create" : "2024-07-27T14:47:39.4152046"
-                                },
-                            ]
-                            """))
-            )
-    })
     @GetMapping("all")
     public ResponseEntity<?> fetchAllOwnerNote(
             @AuthenticationPrincipal User user,
@@ -141,9 +73,9 @@ public class NoteController {
             @AuthenticationPrincipal User user,
             @RequestBody NoteDTO noteDTO
     ) {
-        Note note = noteService.createNote(user, noteDTO);
-        LOG.info("User [email={}] created note [id={}]", user.getEmail(), note.id());
-        return new ResponseEntity<>(note, HttpStatus.CREATED);
+        Integer noteId = noteService.insertEntityIntoContextOnTop(noteDTO, user);
+        LOG.info("User [email={}] created note [id={}]", user.getEmail(), noteId);
+        return new ResponseEntity<>(Map.of("id", noteId), HttpStatus.CREATED);
     }
 
     @PatchMapping("{id}/name")
@@ -211,8 +143,10 @@ public class NoteController {
             @PathVariable("editingNoteId") Integer editingNoteId,
             @RequestParam(value = "prev-note-id", required = false) Integer prevNoteId
     ) {
-
-        noteService.changeOrderNumber(editingNoteId, prevNoteId, catalogId);
+        if(catalogId == null) {
+            catalogId = user.getRootCatalogId();
+        }
+        noteService.moveEntityBehind(prevNoteId, editingNoteId, catalogId);
         LOG.info("User [email={}] moved note [editingNoteId={}] after [frontNoteId={}]",
                 user.getEmail(),
                 editingNoteId,
@@ -228,9 +162,10 @@ public class NoteController {
     public ResponseEntity<?> deleteNote(
             @AuthenticationPrincipal User user,
             @PathVariable("id") List<Integer> notesId,
-            @RequestParam(value = "catalog-id", required = false) Integer catalogId
+            @RequestParam(value = "catalog-id", required = false) Integer catalogId,
+            @RequestParam(value = "anywhere", required = false, defaultValue = "false") boolean anywhere
     ) {
-        noteService.removeNotes(notesId, catalogId);
+        noteService.deleteEntity(notesId, catalogId, user.getRootCatalogId(), anywhere);
         LOG.info("User [email={}] deleted notes [id's={}]", user.getEmail(), notesId);
         return new ResponseEntity<>(HttpStatus.OK);
     }

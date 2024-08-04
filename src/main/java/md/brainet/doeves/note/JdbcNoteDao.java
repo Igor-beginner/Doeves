@@ -307,6 +307,18 @@ public class JdbcNoteDao implements NoteDao {
         return Optional.ofNullable(noteId);
     }
 
+
+    @Override
+    public boolean removeFromNoteCatalogOrdering(Integer noteId, Integer catalogId) {
+        var sql = """
+                DELETE FROM note_catalog_ordering
+                WHERE note_id = ?
+                AND catalog_id = ?
+                """;
+
+        return jdbcTemplate.update(sql, noteId, catalogId) > 0;
+    }
+
     private String getCatalogSelectingRecursiveSql() {
         return """
                 WITH RECURSIVE notes_from_catalog_in_user_order AS (
@@ -351,7 +363,7 @@ public class JdbcNoteDao implements NoteDao {
         insertIntoNoteCatalogOrdering(noteId, catalogId);
     }
 
-    private void insertIntoNoteCatalogOrdering(Integer noteId, Integer catalogId) {
+    public void insertIntoNoteCatalogOrdering(Integer noteId, Integer catalogId) {
         var sqlOrdering = """
                 INSERT INTO note_catalog_ordering(
                     note_id,
@@ -466,5 +478,150 @@ public class JdbcNoteDao implements NoteDao {
                 noteId,
                 catalogId
         );
+    }
+
+    @Override
+    public Integer insertEntity(NoteDTO noteDTO) {
+        var sql = """
+                INSERT INTO note(title, description)
+                VALUES(?, ?)
+                RETURNING id;
+                """;
+
+
+        return jdbcTemplate.queryForObject(
+                sql,
+                Integer.class,
+                noteDTO.getName(),
+                noteDTO.getDescription()
+        );
+    }
+
+    @Override
+    public boolean removeEntity(Integer entityId, Integer contextId) {
+        var sql = """
+                DELETE FROM note_catalog_ordering
+                WHERE note_id = ?
+                AND catalog_id = ?;
+                """;
+
+        return jdbcTemplate.update(sql, entityId, contextId) > 0;
+    }
+
+    @Override
+    public void removeEntity(Integer entityId) {
+        var sql = """
+                DELETE FROM note
+                WHERE id = ?
+                """;
+
+        jdbcTemplate.update(sql, entityId);
+    }
+
+    @Override
+    public List<Integer> findAllContextsForEntity(Integer entityId) {
+        var sql = """
+                SELECT catalog_id
+                FROM note_catalog_ordering
+                WHERE note_id = ?
+                """;
+
+        return jdbcTemplate.queryForList(sql, Integer.class, entityId);
+    }
+
+    @Override
+    public void updatePreviousEntityIdByContext(Integer previousEntityId, Integer currentEntityId, Integer contextId) {
+        var prevIdAsNSql = """
+                UPDATE note_catalog_ordering
+                SET prev_note_id = ?
+                WHERE note_id = ?
+                AND catalog_id = ?;
+                """;
+        jdbcTemplate.update(
+                prevIdAsNSql,
+                previousEntityId,
+                currentEntityId,
+                contextId
+        );
+    }
+
+    @Override
+    public void cleanUp() {
+        var sql = """
+                DELETE FROM note
+                WHERE id NOT IN (
+                    SELECT DISTINCT note_id
+                    FROM note_catalog_ordering
+                )
+                """;
+
+        jdbcTemplate.update(sql);
+    }
+
+    @Override
+    public Integer findFirstEntityIdByContext(Integer contextId) {
+        var sql = """
+                SELECT note_id
+                FROM note_catalog_ordering
+                WHERE catalog_id = ?
+                AND prev_note_id IS NULL;
+                """;
+
+        Integer nextId;
+        try {
+            nextId = jdbcTemplate.queryForObject(
+                    sql,
+                    Integer.class,
+                    contextId
+            );
+        } catch (EmptyResultDataAccessException e) {
+            nextId = null;
+        }
+        return nextId;
+    }
+
+    @Override
+    public Integer findNextEntityIdByContext(Integer entityId, Integer contextId) {
+        var findingNextNoteIdSql = """
+                SELECT note_id
+                FROM note_catalog_ordering
+                WHERE prev_note_id = ?
+                AND catalog_id = ?;
+                """;
+        Integer nextId;
+        try {
+            nextId = jdbcTemplate.queryForObject(
+                    findingNextNoteIdSql,
+                    Integer.class,
+                    entityId,
+                    contextId
+            );
+        } catch (EmptyResultDataAccessException e) {
+            nextId = null;
+        }
+        return nextId;
+    }
+
+    @Override
+    public Integer findPrevEntityIdByContext(Integer entityId, Integer contextId) {
+        var sql = """
+                SELECT prev_note_id
+                FROM note_catalog_ordering nco
+                WHERE note_id = ?
+                AND catalog_id = ?;
+                """;
+        Integer prevId;
+        try {
+            prevId = jdbcTemplate.queryForObject(
+                    sql,
+                    Integer.class,
+                    entityId,
+                    contextId
+            );
+        } catch (EmptyResultDataAccessException e) {
+            prevId = null;
+        }
+
+        return prevId;
     }
 }

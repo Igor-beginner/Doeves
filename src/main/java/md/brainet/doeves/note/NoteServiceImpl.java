@@ -4,6 +4,7 @@ import md.brainet.doeves.catalog.CatalogOrderingRequest;
 import md.brainet.doeves.exception.NoteNotFoundException;
 import md.brainet.doeves.exception.NotesNotExistException;
 import md.brainet.doeves.exception.UserNotFoundException;
+import md.brainet.doeves.general.EntityWithinContextLinkedListService;
 import md.brainet.doeves.user.User;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -12,15 +13,40 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 @Service
-public class NoteServiceImpl implements NoteService {
+public class NoteServiceImpl extends EntityWithinContextLinkedListService<NoteDTO> implements NoteService {
 
     private final NoteDao noteDao;
 
     public NoteServiceImpl(NoteDao noteDao) {
+        super(noteDao);
         this.noteDao = noteDao;
+    }
+
+    public void deleteEntity(List<Integer> entitiesId, Integer catalogId, Integer rootCatalogId, boolean anywhere) {
+        if (anywhere) {
+            super.deleteEntityAnywhere(entitiesId);
+        } else {
+            super.deleteEntity(entitiesId, catalogId == null ? rootCatalogId : catalogId);
+        }
+    }
+    @Transactional
+    public Integer insertEntityIntoContextOnTop(NoteDTO entity, User user) {
+        return insertEntityIntoContextOnTop(entity, user.getRootCatalogId());
+    }
+
+    @Override
+    public Integer insertEntityIntoContextOnTop(NoteDTO entity, Integer rootCatalogId) {
+        Integer entityId = noteDao.insertEntity(entity);
+
+        super.linkEntityToContext(entityId, rootCatalogId, noteDao::insertIntoNoteCatalogOrdering);
+
+        Integer catalogId = entity.getCatalogId();
+        if(catalogId != null) {
+            super.linkEntityToContext(entityId, catalogId, noteDao::insertIntoNoteCatalogOrdering);
+        }
+        return entityId;
     }
 
     @Override
@@ -92,15 +118,18 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
+    @Transactional
     public void changeCatalog(CatalogOrderingRequest request) {
         if(request.getSourceCatalogId() == null) {
             request.setSourceCatalogId(request.getUser().getRootCatalogId());
         }
-        noteDao.moveNoteIdToNewCatalogId(
-                request.getNoteId(),
-                request.getSourceCatalogId(),
-                request.getDestinationCatalogId()
-        );
+        unlinkEntityFromContext(request.getNoteId(), request.getSourceCatalogId());
+        boolean updated = noteDao.removeFromNoteCatalogOrdering(request.getNoteId(), request.getSourceCatalogId());
+        if(!updated) {
+            throw new NoteNotFoundException(request.getNoteId());
+        }
+        AdditionalInsertRequest noteCatalogOrdering = noteDao::insertIntoNoteCatalogOrdering;
+        linkEntityToContext(request.getNoteId(), request.getDestinationCatalogId(), noteCatalogOrdering);
     }
 
     @Override
