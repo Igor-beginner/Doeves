@@ -10,6 +10,7 @@ public record Note(
         Integer id,
         String name,
         String description,
+        @JsonProperty("date_of_create")
         LocalDateTime dateOfCreate
 ) {
 }
