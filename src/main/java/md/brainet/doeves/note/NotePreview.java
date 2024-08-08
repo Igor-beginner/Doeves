@@ -10,7 +10,6 @@ public record NotePreview(
         String name,
         String description,
         CatalogPreview catalog,
-        @JsonProperty("date_of_create")
         LocalDateTime dateOfCreate
 ) {
 

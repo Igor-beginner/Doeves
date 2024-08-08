@@ -136,9 +136,70 @@ public class JdbcNoteDao implements NoteDao {
     @Override
     public Optional<Note> selectByNoteId(Integer noteId) {
         var sql = """
-                SELECT *
-                FROM note
-                WHERE id = ?;
+                WITH RECURSIVE content_of_global_container AS (
+                    SELECT
+                        c.id,
+                        c.prev_id,
+                        c.content_type,
+                        c.container_id,
+                        c.value,
+                        c.date_of_create,
+                        1 AS level
+                    FROM content c
+                    WHERE prev_id IS NULL
+                    AND container_id = (
+                        SELECT global_container_id
+                        FROM note
+                        WHERE id = ?
+                    )
+                    UNION
+                    SELECT c.id,
+                        c.prev_id,
+                        c.content_type,
+                        c.container_id,
+                        c.value,
+                        c.date_of_create,
+                        cogc.level + 1 AS level
+                    FROM content c
+                    JOIN content_of_global_container cogc
+                    ON c.id = cogc.prev_id
+                    AND c.container_id = cogc.container_id
+                )
+                SELECT
+                    n.id ni,
+                    n.title nt,
+                    n.description nd,
+                    n.date_of_create ndoc,
+                    cogc.id ci,
+                    cogc.content_type cc,
+                    cogc.value cv,
+                    cogc.date_of_create cdoc,
+                    c.id c_id,
+                    container_content.id cci,
+                    container_content.content_type ccct,
+                    container_content.value ccv,
+                    container_content.date_of_create ccd,
+                    t.id ti,
+                    t.name tn,
+                    t.description td,
+                    t.deadline tdl,
+                    t.date_of_create tdoc,
+                    t.is_complete tic
+                FROM note n
+                LEFT JOIN content_of_global_container cogc
+                ON n.global_container_id = cogc.id
+                LEFT JOIN container c
+                ON cogc.id = c.id
+                AND cogc.id != n.global_container_id
+                AND cogc.content_type = 'container'
+                LEFT JOIN content container_content
+                ON container_content.container_id = c.id
+                LEFT JOIN task t
+                ON (
+                    CAST(cogc.value AS INTEGER) = t.id OR CAST(container_content.value AS INTEGER) = t.id
+                )
+                AND cogc.content_type = 'task'
+                ORDER BY cogc.level;
                 """;
 
         return Optional.ofNullable(

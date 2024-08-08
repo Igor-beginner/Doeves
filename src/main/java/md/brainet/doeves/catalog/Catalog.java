@@ -12,7 +12,6 @@ public record Catalog(
         Integer prevCatalogId,
         @JsonIgnore
         Integer ownerId,
-        @JsonProperty("date_of_create")
         LocalDateTime dateOfCreate
 ) {
 }
